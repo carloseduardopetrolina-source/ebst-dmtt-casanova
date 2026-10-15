@@ -1,0 +1,2033 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>e-BST Digital | DMTT Casa Nova - BA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; margin: 0; }
+    .tab-btn.active { background-color: #14532d; color: #fff; border-bottom: 4px solid #facc15; }
+    .pulse-mic { animation: pulseRed 1.4s infinite; }
+    @keyframes pulseRed {
+      0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(220,38,38,0); }
+      100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+    }
+    .vehicle-part { cursor: pointer; transition: all 0.2s ease; }
+    .vehicle-part:hover { filter: brightness(0.9); }
+    .vehicle-part.damaged { fill: #ef4444 !important; stroke: #991b1b !important; }
+    .modo-croqui-btn.ativo { background-color: #14532d !important; color: #fff !important; border-color: #14532d !important; }
+    .doc-valido { border-color: #16a34a !important; background-color: #f0fdf4 !important; }
+    .doc-invalido { border-color: #dc2626 !important; background-color: #fef2f2 !important; }
+    .sig-canvas {
+      touch-action: none;
+      cursor: crosshair;
+      background-image: linear-gradient(to bottom, transparent 82%, #cbd5e1 82%, #cbd5e1 84%, transparent 84%);
+    }
+    .print-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 10px; }
+    .print-table th, .print-table td { border: 1px solid #000; padding: 3px 5px; text-align: left; vertical-align: top; }
+    .print-table th { background-color: #e2e8f0; font-weight: 700; }
+    .print-sec-title { background: #1e293b; color: #fff; font-weight: 800; padding: 3px 6px; font-size: 10.5px; margin: 6px 0 3px 0; text-transform: uppercase; }
+    @media print {
+      @page { size: A4; margin: 7mm; }
+      body { background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .quebra-pagina { page-break-before: always; }
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- ==================== MODAL: ALTERAR MINHA SENHA ==================== -->
+  <div id="modal_minha_senha" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-2xl border-t-4 border-green-700 w-full max-w-sm p-5 space-y-4">
+      <div class="flex items-center justify-between border-b pb-2">
+        <h3 class="text-sm font-extrabold uppercase text-green-900"><i class="fa-solid fa-key mr-1"></i> Alterar Minha Senha</h3>
+        <button onclick="fecharModalMinhaSenha()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="salvarMinhaNovaSenha(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">Senha Atual</label>
+          <input id="inp_senha_atual" type="password" required class="w-full border rounded-lg p-2" placeholder="Digite sua senha atual" />
+        </div>
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">Nova Senha (mín. 4 caracteres)</label>
+          <input id="inp_nova_senha" type="password" minlength="4" required class="w-full border rounded-lg p-2" placeholder="Digite a nova senha" />
+        </div>
+        <div>
+          <label class="font-bold text-slate-600 block mb-1">Confirmar Nova Senha</label>
+          <input id="inp_conf_senha" type="password" minlength="4" required class="w-full border rounded-lg p-2" placeholder="Repita a nova senha" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="fecharModalMinhaSenha()" class="bg-slate-200 px-3 py-2 rounded-lg font-bold">Cancelar</button>
+          <button type="submit" class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg font-bold">Atualizar Senha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== TELA DE LOGIN ==================== -->
+  <div id="login_screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-green-950 to-slate-900 p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-2xl border-t-8 border-green-600 w-full max-w-md p-6 md:p-8">
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-36 h-36 mb-3 rounded-2xl bg-white p-2 shadow-md border-2 border-green-600 flex items-center justify-center select-none pointer-events-none">
+          <img id="img_logo_login" src="LOGO DMTT.png" alt="Logo DMTT Casa Nova-BA" class="w-full h-full object-contain logo-dmtt-img" onerror="usarLogoPadraoSVG(this)" />
+        </div>
+        <span class="bg-green-700 text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded uppercase tracking-wider">DMTT | CASA NOVA-BA</span>
+        <h1 class="text-lg font-extrabold text-slate-900 mt-1 uppercase leading-tight">Departamento Municipal de Trânsito</h1>
+        <p class="text-xs text-slate-500 font-medium">Sistema Oficial de Boletim de Sinistro de Trânsito (e-BST)</p>
+        <div class="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+          <i class="fa-solid fa-shield-halved"></i> Controle de Autoria e Validador CNH/CPF Ativo
+        </div>
+      </div>
+
+      <form onsubmit="realizarLogin(event)" class="space-y-4" autocomplete="off">
+        <div id="login_erro" class="hidden bg-red-50 border border-red-300 text-red-700 text-xs font-bold p-3 rounded-lg text-center"></div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Usuário / Matrícula</label>
+          <div class="relative">
+            <i class="fa-solid fa-user-shield absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+            <input id="login_user" type="text" required placeholder="Digite seu usuário (ex: admin)" class="w-full border border-slate-300 rounded-xl pl-10 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-green-600 focus:outline-none" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha de Acesso</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+            <input id="login_pass" type="password" required placeholder="Digite sua senha" class="w-full border border-slate-300 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-green-600 focus:outline-none" />
+            <button type="button" onclick="alternarVisibilidadeSenha()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <i id="icone_olho_senha" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-green-700 hover:bg-green-800 text-white font-extrabold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-sm uppercase tracking-wider cursor-pointer">
+          <i class="fa-solid fa-right-to-bracket"></i> Entrar no Sistema e-BST
+        </button>
+      </form>
+      <div class="mt-6 pt-4 border-t border-slate-200 text-center text-[11px] text-slate-400">
+        Acesso restrito a agentes e operadores autorizados do DMTT Casa Nova-BA.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== APLICAÇÃO PRINCIPAL ==================== -->
+  <div id="app_screen" class="hidden flex-1 flex flex-col no-print">
+    <header class="bg-slate-900 text-white border-b-4 border-green-600 shadow-lg sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-14 h-14 rounded-xl bg-white p-1 flex items-center justify-center shadow-md border-2 border-green-600 shrink-0 select-none pointer-events-none">
+            <img id="img_logo_topo" src="LOGO DMTT.png" alt="Logo DMTT Casa Nova-BA" class="w-full h-full object-contain logo-dmtt-img" onerror="usarLogoPadraoSVG(this)" />
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="bg-green-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded uppercase">DMTT | CASA NOVA-BA</span>
+              <span id="badge_usuario_logado" class="bg-slate-800 border border-slate-600 text-yellow-400 text-xs font-bold px-2.5 py-0.5 rounded-full"></span>
+              <button onclick="abrirModalMinhaSenha()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 transition">
+                <i class="fa-solid fa-key text-yellow-400"></i> Alterar Minha Senha
+              </button>
+            </div>
+            <h1 class="text-sm md:text-base font-extrabold uppercase text-white mt-0.5">Departamento Municipal de Trânsito de Casa Nova-BA (DMTT)</h1>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <div class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs">
+            <span class="text-slate-400 block text-[9px]">BST Nº ATUAL</span>
+            <input id="bst_numero" type="text" class="bg-transparent font-bold text-yellow-400 focus:outline-none w-28" value="BST-2026-0001" />
+          </div>
+          <button onclick="novoBoletim()" class="bg-blue-700 hover:bg-blue-600 text-white text-xs font-semibold px-2.5 py-2 rounded-lg flex items-center gap-1"><i class="fa-solid fa-file-circle-plus"></i> Novo</button>
+          <button onclick="carregarExemplo()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-2.5 py-2 rounded-lg flex items-center gap-1"><i class="fa-solid fa-wand-magic-sparkles text-yellow-400"></i> Exemplo</button>
+          <button id="btn_salvar_topo" onclick="salvarBoletimBanco()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1 shadow"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+          <button onclick="gerarImpressao()" class="bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1 shadow"><i class="fa-solid fa-print"></i> Imprimir / PDF</button>
+          <button onclick="compartilharWhatsAppAtual()" class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1" title="Enviar por WhatsApp"><i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp</button>
+          <button onclick="compartilharEmailAtual()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1" title="Enviar por E-mail"><i class="fa-solid fa-envelope"></i> E-mail</button>
+          <button onclick="realizarLogout()" class="bg-red-700 hover:bg-red-600 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1"><i class="fa-solid fa-power-off"></i> Sair</button>
+        </div>
+      </div>
+
+      <!-- AVISO DE MODO SOMENTE LEITURA (QUANDO VISUALIZANDO BST DE OUTRO USUÁRIO) -->
+      <div id="aviso_somente_leitura" class="hidden bg-amber-500 text-slate-950 text-xs font-extrabold px-4 py-1.5 text-center">
+        <i class="fa-solid fa-lock mr-1"></i> MODO SOMENTE VISUALIZAÇÃO E IMPRESSÃO: Este boletim foi registrado por outro usuário. Você pode visualizá-lo, imprimi-lo ou compartilhá-lo, mas não pode alterar seus dados.
+      </div>
+
+      <nav class="bg-slate-800/90 border-t border-slate-700 overflow-x-auto">
+        <div class="max-w-7xl mx-auto px-2 flex whitespace-nowrap text-xs font-semibold">
+          <button onclick="mudarAba(1)" id="tab-btn-1" class="tab-btn active px-3.5 py-3 flex items-center gap-1.5"><i class="fa-solid fa-location-dot"></i> 1. Local (GPS) e Infrações</button>
+          <button onclick="mudarAba(2)" id="tab-btn-2" class="tab-btn px-3.5 py-3 flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-camera"></i> 2. Veículos, CNH e Fotos</button>
+          <button onclick="mudarAba(3)" id="tab-btn-3" class="tab-btn px-3.5 py-3 flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-gauge-high"></i> 3. Condutores e Velocidade</button>
+          <button onclick="mudarAba(4)" id="tab-btn-4" class="tab-btn px-3.5 py-3 flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-user-injured"></i> 4. Vítimas e Testemunhas</button>
+          <button onclick="mudarAba(5)" id="tab-btn-5" class="tab-btn px-3.5 py-3 flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-signature text-yellow-400"></i> 5. Dinâmica (Voz) e Assinaturas</button>
+          <button onclick="mudarAba(6)" id="tab-btn-6" class="tab-btn px-3.5 py-3 flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-compass-drafting"></i> 6. Croqui Interativo e Agente</button>
+          <button onclick="mudarAba(7)" id="tab-btn-7" class="tab-btn px-3.5 py-3 flex items-center gap-1.5 text-emerald-300 hover:text-white"><i class="fa-solid fa-database"></i> 7. Banco de Dados (<span id="contador_bst_menu">0</span>)</button>
+          <button onclick="mudarAba(8)" id="tab-btn-8" class="tab-btn hidden px-3.5 py-3 flex items-center gap-1.5 text-amber-300 hover:text-white"><i class="fa-solid fa-users-gear"></i> 8. Usuários e Senhas (Admin)</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1">
+      <!-- ==================== ABA 1: LOCALIZAÇÃO COM MÓDULO GPS CORRIGIDO ==================== -->
+      <section id="aba-1" class="space-y-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3 mb-4">
+            <div>
+              <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2">
+                <span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">I</span> Localização do Sinistro (Com Preenchimento de Endereço por GPS)
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">Clique em <strong>"Obter Endereço por GPS"</strong> para preencher automaticamente a Rua/Avenida, Bairro, Cidade, Referência e Horário.</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" id="btn_capturar_gps" onclick="capturarLocalizacaoGPS()" class="bg-blue-700 hover:bg-blue-600 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shadow flex items-center gap-2 transition cursor-pointer">
+                <i class="fa-solid fa-location-crosshairs text-yellow-300 text-sm"></i>
+                <span>Obter Endereço por GPS</span>
+              </button>
+              <a id="link_ver_mapa_gps" href="#" target="_blank" rel="noopener noreferrer" class="hidden bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold px-3 py-2.5 rounded-xl flex items-center gap-1.5">
+                <i class="fa-solid fa-map-location-dot"></i> Abrir no Google Maps
+              </a>
+            </div>
+          </div>
+
+          <div id="status_gps_box" class="hidden mb-4 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex flex-wrap items-center justify-between gap-2 border"></div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+            <div class="md:col-span-2">
+              <label class="font-bold text-slate-600 block mb-1">Local (Logradouro / Rua / Avenida / Rodovia)</label>
+              <input id="loc_local" type="text" placeholder="Ex: Av. Governador Roberto Santos" class="w-full border rounded-lg p-2" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">Ponto de Referência</label>
+              <input id="loc_ref" type="text" placeholder="Ex: Próximo à Praça / Posto" class="w-full border rounded-lg p-2" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">Bairro / Distrito</label>
+              <input id="loc_bairro" type="text" placeholder="Ex: Centro" class="w-full border rounded-lg p-2" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">Cidade / UF</label>
+              <input id="loc_cidade" type="text" value="Casa Nova - BA" class="w-full border rounded-lg p-2 bg-slate-50 font-semibold" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">Coordenadas GPS (Lat, Lng)</label>
+              <input id="loc_coordenadas" type="text" placeholder="-9.163300, -40.972500" class="w-full border rounded-lg p-2 bg-slate-50 font-mono text-[11px]" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-600 block mb-1">Data e Dia da Semana</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                <input id="loc_data" type="date" class="w-full border rounded-lg p-2" />
+                <select id="loc_dia" class="w-full border rounded-lg p-2">
+                  <option>Segunda-feira</option><option>Terça-feira</option><option>Quarta-feira</option><option>Quinta-feira</option><option>Sexta-feira</option><option>Sábado</option><option>Domingo</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="font-bold text-slate-600 block mb-1">Hora Ocorr.</label><input id="loc_hora_ocor" type="time" class="w-full border rounded-lg p-2" /></div>
+              <div><label class="font-bold text-slate-600 block mb-1">Cheg. Equipe</label><input id="loc_hora_cheg" type="time" class="w-full border rounded-lg p-2" /></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center justify-between border-b pb-2 mb-4 gap-2">
+            <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">II</span> Classificação do Sinistro</h2>
+            <div class="flex items-center gap-3 text-xs">
+              <label class="bg-slate-100 px-3 py-1 rounded-lg font-bold">Nº Vítimas: <input id="num_vitimas" type="number" min="0" value="0" class="w-12 text-center border rounded p-0.5 bg-white" /></label>
+              <label class="bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg font-bold text-amber-800">Nº Feridos: <input id="num_feridos" type="number" min="0" value="0" class="w-12 text-center border rounded p-0.5 bg-white" /></label>
+              <label class="bg-red-50 border border-red-200 px-3 py-1 rounded-lg font-bold text-red-800">Nº Mortos: <input id="num_mortos" type="number" min="0" value="0" class="w-12 text-center border rounded p-0.5 bg-white" /></label>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 text-xs" id="classificacao_container"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-4 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">III</span> Circunstâncias do Sinistro</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+            <div><label class="font-bold block mb-1">Do Local</label><select id="circ_local" class="w-full border rounded-lg p-2"><option>Leito da Via</option><option>Cruzamento</option><option>Rotatória</option><option>Bifurcação T</option><option>Bifurcação Y</option></select></div>
+            <div><label class="font-bold block mb-1">Sinalização</label><select id="circ_sinalizacao" class="w-full border rounded-lg p-2"><option>Boa</option><option>Regular</option><option>Má</option><option>Não Existe</option></select></div>
+            <div><label class="font-bold block mb-1">Semáforo</label><select id="circ_semaforo" class="w-full border rounded-lg p-2"><option>Não Existe</option><option>Sem Defeito (Bom)</option><option>Com Defeito</option><option>Desligado</option></select></div>
+            <div><label class="font-bold block mb-1">Período / Dia</label><select id="circ_periodo" class="w-full border rounded-lg p-2"><option>Manhã</option><option>Tarde</option><option>Noite</option><option>Madrugada</option></select></div>
+            <div><label class="font-bold block mb-1">Clima</label><select id="circ_clima" class="w-full border rounded-lg p-2"><option>Bom</option><option>Chuvoso</option><option>Neblina</option><option>Garoa</option></select></div>
+            <div><label class="font-bold block mb-1">Pista</label><select id="circ_pista" class="w-full border rounded-lg p-2"><option>Seca</option><option>Molhada</option><option>Enlameada</option><option>Oleosa</option><option>Em Obras</option></select></div>
+            <div><label class="font-bold block mb-1">Pavimentação</label><select id="circ_pavimentacao" class="w-full border rounded-lg p-2"><option>Asfalto</option><option>Concreto</option><option>Paralelepípedo</option><option>Cascalho</option><option>Sem Revestimento</option></select></div>
+            <div><label class="font-bold block mb-1">Sentido / Área</label><div class="grid grid-cols-2 gap-1"><select id="circ_sentido" class="border rounded-lg p-2"><option>Duplo</option><option>Único</option></select><select id="circ_area" class="border rounded-lg p-2"><option>Urbana</option><option>Rural</option></select></div></div>
+            <div><label class="font-bold block mb-1">Divisão da Via</label><select id="circ_divisao" class="w-full border rounded-lg p-2"><option>Faixa Contínua</option><option>Faixa Seccionada</option><option>Canteiro Central</option><option>Não Existe</option></select></div>
+            <div><label class="font-bold block mb-1">Condições Gerais</label><select id="circ_cond_gerais" class="w-full border rounded-lg p-2"><option>Normal / Sem Restrições</option><option>Pista Estreita</option><option>Curva Fechada</option><option>Ponte Estreita</option><option>Defeito na Pista</option><option>Obras / Obstáculo</option><option>Fumaça</option></select></div>
+            <div class="sm:col-span-2 md:col-span-5 pt-1">
+              <label class="font-bold block mb-1">Placas / Sinalização no Local:</label>
+              <div class="flex flex-wrap gap-3">
+                <label class="flex items-center gap-1"><input type="checkbox" value="Placa de Regulamentação" class="circ-placa"/> Regulamentação</label>
+                <label class="flex items-center gap-1"><input type="checkbox" value="Placa de Advertência" class="circ-placa"/> Advertência</label>
+                <label class="flex items-center gap-1"><input type="checkbox" value="Placa de Indicação" class="circ-placa"/> Indicação</label>
+                <label class="flex items-center gap-1"><input type="checkbox" value="Faixa de Pedestre" class="circ-placa"/> Faixa de Pedestre</label>
+                <label class="flex items-center gap-1"><input type="checkbox" value="Faixa de Retenção" class="circ-placa"/> Faixa de Retenção</label>
+                <label class="flex items-center gap-1"><input type="checkbox" value="Ciclo Faixa" class="circ-placa"/> Ciclofaixa</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-3 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">IV</span> Infrações Autuadas por Veículo (V1 a V4)</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs" id="infracoes_container"></div>
+        </div>
+      </section>
+
+      <!-- ==================== ABA 2: VEÍCULOS, VALID. CNH/CPF, AVARIAS E FOTOS ==================== -->
+      <section id="aba-2" class="space-y-6 hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3 mb-4">
+            <div>
+              <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">V</span> Dados dos Veículos, Condutores (Com Validador de CNH e CPF), Avarias e Fotos</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Validação oficial de 11 dígitos para CNH (DENATRAN) e CPF/CNPJ (Receita Federal).</p>
+            </div>
+            <button onclick="adicionarVeiculo()" class="bg-green-800 hover:bg-green-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Adicionar Veículo (Máx. 4)</button>
+          </div>
+          <div id="veiculos_container" class="space-y-6"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-4 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">VI</span> Outras Propriedades Atingidas</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div><label class="font-bold text-slate-600 block mb-1">Proprietário / Órgão</label><input id="prop_nome" type="text" class="w-full border rounded-lg p-2" /></div>
+            <div><label class="font-bold text-slate-600 block mb-1">Natureza das Avarias</label><input id="prop_avarias" type="text" class="w-full border rounded-lg p-2" /></div>
+            <div><label class="font-bold text-slate-600 block mb-1">Tomou Conhecimento</label><input id="prop_conhecimento" type="text" class="w-full border rounded-lg p-2" /></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== ABA 3: CONDIÇÕES, VELOCIDADE, PROVIDÊNCIAS ==================== -->
+      <section id="aba-3" class="space-y-6 hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-4 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">VIII</span> Das Condições dos Condutores (V1 a V4)</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse">
+              <thead><tr class="bg-slate-100 border-b"><th class="p-2 text-left">Avaliação / Estado do Condutor</th><th class="p-2 text-center">V1</th><th class="p-2 text-center">V2</th><th class="p-2 text-center">V3</th><th class="p-2 text-center">V4</th></tr></thead>
+              <tbody id="condicoes_condutores_tbody" class="divide-y"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-4 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">IX</span> Estimativa de Velocidade e Marcas de Frenagem</h2>
+          <div class="overflow-x-auto mb-4">
+            <table class="w-full text-xs border-collapse border">
+              <thead><tr class="bg-slate-100"><th class="border p-2 text-left">1 - Marcas de Frenagem dos Pneus (m)</th><th class="border p-2 text-center">V1</th><th class="border p-2 text-center">V2</th><th class="border p-2 text-center">V3</th><th class="border p-2 text-center">V4</th></tr></thead>
+              <tbody>
+                <tr><td class="border p-1.5 font-semibold">Dianteiro Direito</td><td class="border p-1"><input id="fren_dd_v1" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_dd_v2" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_dd_v3" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_dd_v4" type="text" class="w-full text-center border rounded p-1"/></td></tr>
+                <tr><td class="border p-1.5 font-semibold">Dianteiro Esquerdo</td><td class="border p-1"><input id="fren_de_v1" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_de_v2" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_de_v3" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_de_v4" type="text" class="w-full text-center border rounded p-1"/></td></tr>
+                <tr><td class="border p-1.5 font-semibold">Traseiro Direito</td><td class="border p-1"><input id="fren_td_v1" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_td_v2" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_td_v3" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_td_v4" type="text" class="w-full text-center border rounded p-1"/></td></tr>
+                <tr><td class="border p-1.5 font-semibold">Traseiro Esquerdo</td><td class="border p-1"><input id="fren_te_v1" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_te_v2" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_te_v3" type="text" class="w-full text-center border rounded p-1"/></td><td class="border p-1"><input id="fren_te_v4" type="text" class="w-full text-center border rounded p-1"/></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div><label class="font-bold text-slate-600 block mb-1">2 - Distância Após Embate (m)</label><input id="vel_dist_embate" type="text" class="w-full border rounded-lg p-2" /></div>
+            <div><label class="font-bold text-slate-600 block mb-1">3 - Distância Visibilidade Percepção</label><input id="vel_dist_visib" type="text" class="w-full border rounded-lg p-2" /></div>
+            <div><label class="font-bold text-slate-600 block mb-1">4 - Velocidade Máxima Permitida</label><input id="vel_max_via" type="text" placeholder="Ex: 40 km/h" class="w-full border rounded-lg p-2" /></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-4 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">X</span> Providências Iniciais</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div>
+              <label class="font-bold block mb-1">1 - Comunicado A:</label>
+              <div class="flex flex-wrap gap-2 pt-1">
+                <label><input type="checkbox" value="DMTT Casa Nova" class="prov-comunicado" checked/> DMTT</label>
+                <label><input type="checkbox" value="PMBA" class="prov-comunicado"/> PMBA</label>
+                <label><input type="checkbox" value="SAMU 192" class="prov-comunicado"/> SAMU 192</label>
+                <label><input type="checkbox" value="DPT / Perícia" class="prov-comunicado"/> DPT</label>
+              </div>
+            </div>
+            <div>
+              <label class="font-bold block mb-1">4 - Reboque Efetuado por:</label>
+              <div class="flex flex-wrap gap-2 pt-1">
+                <label><input type="checkbox" value="Guincho DMTT" class="prov-reboque"/> DMTT</label>
+                <label><input type="checkbox" value="PMBA" class="prov-reboque"/> PMBA</label>
+                <label><input type="checkbox" value="Particular" class="prov-reboque"/> Particular</label>
+              </div>
+            </div>
+            <div><label class="font-bold block mb-1">2 - Recebedor da Ocorrência</label><input id="prov_recebedor" type="text" class="w-full border rounded-lg p-2" /></div>
+            <div class="md:col-span-2"><label class="font-bold block mb-1">3 - Equipe que Compareceu ao Local</label><input id="prov_equipe_nome" type="text" class="w-full border rounded-lg p-2" /></div>
+            <div><label class="font-bold block mb-1">Matrícula da Equipe</label><input id="prov_equipe_mat" type="text" class="w-full border rounded-lg p-2" /></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== ABA 4: VÍTIMAS E TESTEMUNHAS ==================== -->
+      <section id="aba-4" class="space-y-6 hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3 mb-4">
+            <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">XI</span> Registro de Vítimas (Com Validador de CPF)</h2>
+            <button onclick="adicionarVitima()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-user-plus"></i> Adicionar Vítima</button>
+          </div>
+          <div id="vitimas_container" class="space-y-4"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3 mb-4">
+            <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">VII</span> Testemunhas</h2>
+            <button onclick="adicionarTestemunha()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Adicionar Testemunha</button>
+          </div>
+          <div id="testemunhas_container" class="space-y-4"></div>
+        </div>
+      </section>
+
+      <!-- ==================== ABA 5: DESCRIÇÃO POR VOZ E ASSINATURAS NA TELA ==================== -->
+      <section id="aba-5" class="space-y-6 hidden">
+        <div class="bg-white rounded-xl shadow-sm border-2 border-green-800 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3 mb-4">
+            <div>
+              <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">XII</span> Descrição da Dinâmica do Sinistro (Com Narração por Voz)</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Narre os fatos pelo microfone e colete abaixo a assinatura dos envolvidos diretamente com o dedo na tela.</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" id="btn_voz_dinamica" onclick="alternarReconhecimentoVoz('desc_dinamica', 'btn_voz_dinamica', 'status_voz_dinamica')" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow">
+                <i class="fa-solid fa-microphone"></i> <span>Iniciar Narração por Voz</span>
+              </button>
+              <button type="button" onclick="gerarRelatoAutomatico()" class="bg-green-50 hover:bg-green-100 text-green-900 border border-green-200 text-xs font-bold px-3 py-2.5 rounded-xl flex items-center gap-1.5">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Texto Base
+              </button>
+            </div>
+          </div>
+
+          <div id="status_voz_dinamica" class="hidden mb-3 bg-red-50 border border-red-200 text-red-800 rounded-lg px-3 py-2 text-xs font-semibold">
+            Microfone ativo (pt-BR): fale pausadamente a dinâmica do sinistro...
+          </div>
+
+          <textarea id="desc_dinamica" rows="5" placeholder="Descreva ou dite por voz a dinâmica completa do sinistro de trânsito..." class="w-full border border-slate-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-green-700 focus:outline-none"></textarea>
+
+          <div class="mt-6 pt-5 border-t-2 border-slate-200">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h3 class="text-xs font-extrabold uppercase text-green-900 flex items-center gap-2">
+                  <i class="fa-solid fa-signature text-green-700 text-sm"></i> Assinatura dos Envolvidos (Com o dedo na tela ou mouse)
+                </h3>
+                <p class="text-[11px] text-slate-500">Assine diretamente dentro da caixa tracejada abaixo.</p>
+              </div>
+              <button type="button" onclick="adicionarAssinaturaEnvolvido()" class="bg-green-800 hover:bg-green-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-pen-nib"></i> + Adicionar Envolvido para Assinar
+              </button>
+            </div>
+            <div id="assinaturas_envolvidos_container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3 mb-4">
+            <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">PÁG. 7 e 8</span> Declarações dos Condutores (Com Voz e Assinatura na Tela)</h2>
+            <button type="button" onclick="adicionarDeclaracao()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-file-signature"></i> Adicionar Declaração</button>
+          </div>
+          <div id="declaracoes_container" class="space-y-4"></div>
+        </div>
+      </section>
+
+      <!-- ==================== ABA 6: CROQUI INTERATIVO ==================== -->
+      <section id="aba-6" class="space-y-6 hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3 mb-4">
+            <div>
+              <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">PÁGINA 5</span> Croqui Interativo (Objetos Móveis + Simbologia Oficial)</h2>
+              <p class="text-xs text-slate-500">Clique nos símbolos para inserir e arraste-os livremente pelo croqui.</p>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" onclick="mudarGabaritoCroqui('ambos')" class="bg-green-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Gabarito Completo (Pág. 5)</button>
+              <button type="button" onclick="mudarGabaritoCroqui('intersecao')" class="bg-slate-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Só Interseção</button>
+              <button type="button" onclick="mudarGabaritoCroqui('reta')" class="bg-slate-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Só Pista Reta</button>
+              <button type="button" onclick="limparCroquiTotal()" class="bg-red-100 text-red-700 text-xs font-bold px-3 py-1.5 rounded-lg">Limpar Tudo</button>
+            </div>
+          </div>
+
+          <div class="bg-slate-100 border border-slate-300 rounded-xl p-3 mb-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" id="btn_modo_mover" onclick="definirModoCroqui('mover')" class="modo-croqui-btn ativo bg-white border px-3 py-1.5 rounded-lg font-bold"><i class="fa-solid fa-arrows-up-down-left-right"></i> Mover / Girar Objetos</button>
+              <button type="button" id="btn_modo_desenhar" onclick="definirModoCroqui('desenhar')" class="modo-croqui-btn bg-white border px-3 py-1.5 rounded-lg font-bold"><i class="fa-solid fa-pen"></i> Lápis Livre</button>
+              <input type="color" id="croqui_cor" value="#1e293b" class="w-7 h-7 rounded cursor-pointer border bg-white" />
+              <button type="button" onclick="desfazerUltimoTraco()" class="bg-white border px-2.5 py-1 rounded-lg font-semibold">Desfazer Traço</button>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap bg-white px-3 py-1.5 rounded-lg border">
+              <span id="label_obj_selecionado" class="font-bold text-slate-500 mr-1">Nenhum objeto selecionado</span>
+              <button type="button" onclick="rodarObjetoSelecionado(-45)" class="bg-slate-100 px-2 py-1 rounded font-bold">-45°</button>
+              <button type="button" onclick="rodarObjetoSelecionado(-15)" class="bg-slate-100 px-2 py-1 rounded font-bold">-15°</button>
+              <button type="button" onclick="rodarObjetoSelecionado(15)" class="bg-slate-100 px-2 py-1 rounded font-bold">+15°</button>
+              <button type="button" onclick="rodarObjetoSelecionado(45)" class="bg-slate-100 px-2 py-1 rounded font-bold">+45°</button>
+              <button type="button" onclick="removerObjetoSelecionado()" class="bg-red-600 text-white px-2.5 py-1 rounded font-bold ml-1">Remover</button>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 border rounded-xl p-3 mb-3 text-xs space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-slate-700 uppercase">Simbologia Oficial (Clique para inserir no croqui):</span>
+              <div>
+                <label class="font-bold mr-1">Rótulo:</label>
+                <select id="sel_id_veiculo_croqui" class="border rounded px-2 py-0.5 font-extrabold bg-white"><option value="V1">V1</option><option value="V2">V2</option><option value="V3">V3</option><option value="V4">V4</option><option value="">Sem Rótulo</option></select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+              <button type="button" onclick="adicionarObjetoCroqui('auto_antes')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">🚗 Automóvel (Antes)</button>
+              <button type="button" onclick="adicionarObjetoCroqui('auto_depois')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">🚙 Automóvel (Depois)</button>
+              <button type="button" onclick="adicionarObjetoCroqui('motocicleta')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">🏍️ Motocicleta (OD)</button>
+              <button type="button" onclick="adicionarObjetoCroqui('onibus_caminhao')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">🚌 Ônibus / Caminhão</button>
+              <button type="button" onclick="adicionarObjetoCroqui('ciclo')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">🚲 Ciclo</button>
+              <button type="button" onclick="adicionarObjetoCroqui('pedestre')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">🚶 Pedestre</button>
+              <button type="button" onclick="adicionarObjetoCroqui('objeto_fixo')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">⬛ Objeto Fixo / Animal</button>
+              <button type="button" onclick="adicionarObjetoCroqui('ponto_impacto')" class="bg-red-50 hover:bg-red-100 border border-red-300 text-red-800 rounded-lg p-2 font-bold">💥 Ponto Impacto (*)</button>
+              <button type="button" onclick="adicionarObjetoCroqui('capotagem')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">🌀 Capotagem</button>
+              <button type="button" onclick="adicionarObjetoCroqui('derrapagem')" class="bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg p-2 font-bold">〰️ Derrapagem</button>
+              <button type="button" onclick="adicionarObjetoCroqui('sentido_via')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">⇄ Sentido da Via</button>
+              <button type="button" onclick="adicionarObjetoCroqui('marcha_re')" class="bg-white hover:bg-green-50 border rounded-lg p-2 font-bold">⬅ Marcha à Ré</button>
+            </div>
+          </div>
+
+          <div class="border-2 border-slate-400 rounded-xl overflow-hidden bg-white flex justify-center">
+            <canvas id="canvas_croqui" width="920" height="460" class="w-full max-w-[920px] touch-none cursor-move"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-4 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">XIII</span> Identificação do Agente de Trânsito - DMTT Casa Nova-BA</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div><label class="font-bold text-slate-600 block mb-1">Nome Completo do Agente</label><input id="agente_nome" type="text" class="w-full border rounded-lg p-2.5" /></div>
+            <div><label class="font-bold text-slate-600 block mb-1">Matrícula Funcional</label><input id="agente_matricula" type="text" class="w-full border rounded-lg p-2.5" /></div>
+            <div><label class="font-bold text-slate-600 block mb-1">Telefone Funcional</label><input id="agente_fone" type="text" class="w-full border rounded-lg p-2.5" /></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== ABA 7: BANCO DE DADOS COM PERMISSÃO POR AUTOR + WHATSAPP/EMAIL ==================== -->
+      <section id="aba-7" class="space-y-6 hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3 mb-4">
+            <div>
+              <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><i class="fa-solid fa-database text-green-700"></i> Base de Dados de Boletins Salvos</h2>
+              <p class="text-xs text-slate-500">Cada operador pode <strong>editar apenas os boletins criados por ele</strong> e <strong>visualizar/imprimir/enviar</strong> os boletins dos demais usuários. O Administrador possui controle total.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="exportarBancoJSON()" class="bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg"><i class="fa-solid fa-download"></i> Exportar Backup (.JSON)</button>
+              <label class="bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-lg cursor-pointer"><i class="fa-solid fa-upload"></i> Importar (.JSON)<input type="file" accept=".json" class="hidden" onchange="importarBancoJSON(event)" /></label>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse">
+              <thead><tr class="bg-slate-100 border-b"><th class="p-2.5 text-left">BST Nº</th><th class="p-2.5 text-left">Data / Hora</th><th class="p-2.5 text-left">Local / Bairro</th><th class="p-2.5 text-left">Veículos</th><th class="p-2.5 text-left">Autor do Registro</th><th class="p-2.5 text-right">Ações e Compartilhamento</th></tr></thead>
+              <tbody id="tabela_banco_bst" class="divide-y"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== ABA 8: GESTÃO DE USUÁRIOS E REDEFINIÇÃO DE SENHAS (ADMIN) ==================== -->
+      <section id="aba-8" class="space-y-6 hidden">
+        <div class="bg-white rounded-xl shadow-sm border-2 border-amber-400 p-5">
+          <h2 class="text-sm font-extrabold uppercase text-slate-900 border-b pb-3 mb-4"><i class="fa-solid fa-user-plus text-amber-600"></i> Cadastrar Novo Usuário ou Alterar Senha de Qualquer Usuário (Exclusivo Admin)</h2>
+          <form onsubmit="criarNovoUsuario(event)" class="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs bg-slate-50 p-4 rounded-xl border mb-6" autocomplete="off">
+            <div><label class="font-bold block mb-1">Nome Completo</label><input id="novo_user_nome" type="text" required class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div><label class="font-bold block mb-1">Matrícula</label><input id="novo_user_mat" type="text" required class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div><label class="font-bold block mb-1">Login</label><input id="novo_user_login" type="text" required class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div><label class="font-bold block mb-1">Senha Inicial</label><input id="novo_user_senha" type="text" minlength="4" required class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div>
+              <label class="font-bold block mb-1">Perfil</label>
+              <div class="flex gap-2">
+                <select id="novo_user_role" class="w-full border rounded-lg p-2 bg-white font-bold"><option value="operador">Operador</option><option value="admin">Administrador</option></select>
+                <button type="submit" class="bg-green-700 text-white font-bold px-4 py-2 rounded-lg">Criar</button>
+              </div>
+            </div>
+          </form>
+          <table class="w-full text-xs border-collapse">
+            <thead><tr class="bg-slate-100 border-b"><th class="p-2.5 text-left">Nome</th><th class="p-2.5 text-left">Matrícula</th><th class="p-2.5 text-left">Login</th><th class="p-2.5 text-left">Perfil</th><th class="p-2.5 text-right">Gerenciar Senha / Acesso</th></tr></thead>
+            <tbody id="tabela_usuarios" class="divide-y"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ÁREA DE IMPRESSÃO OFICIAL COMPLETA -->
+  <div id="print_area" class="hidden print-only p-3 text-xs text-black bg-white"></div>
+
+  <script>
+    const CHAVE_USUARIOS = 'dmtt_casanova_usuarios_db_v2';
+    const CHAVE_BOLETINS = 'dmtt_casanova_boletins_db_v2';
+    let usuarioLogado = null;
+    let modoSomenteLeitura = false;
+    let fotosVeiculos = { 1: [], 2: [], 3: [], 4: [] };
+    let assinaturasEnvolvidos = [];
+    let veiculos = [];
+    let vitimas = [];
+    let testemunhas = [];
+    let declaracoes = [];
+
+    function esc(texto) {
+      return String(texto || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    const LOGO_DMTT_SVG_DATA_URI = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><path d="M250,25 C295,65 360,65 405,40 L440,95 C395,180 395,280 425,365 C355,415 295,440 250,475 C205,440 145,415 75,365 C105,280 105,180 60,95 L95,40 C140,65 205,65 250,25 Z" fill="#fff" stroke="#3f8a1e" stroke-width="16"/><path d="M105,95 Q250,60 395,95 L380,145 Q250,115 120,145 Z" fill="#3f8a1e"/><text x="250" y="118" font-family="Arial" font-weight="900" font-size="19" fill="#fff" text-anchor="middle">DEPARTAMENTO DE TRÂNSITO</text><path d="M65,365 Q250,325 435,365 L420,425 Q250,385 80,425 Z" fill="#3f8a1e"/><text x="250" y="395" font-family="Arial" font-weight="900" font-size="26" fill="#fff" text-anchor="middle">DMTT | CASA NOVA-BA</text></svg>`);
+    function usarLogoPadraoSVG(imgEl) { imgEl.onerror = null; imgEl.src = LOGO_DMTT_SVG_DATA_URI; }
+
+    // ============================================================================
+    // 1. AUTENTICAÇÃO E GESTÃO DE SENHAS (PRÓPRIA E PELO ADMINISTRADOR)
+    // ============================================================================
+    const USUARIOS_PADRAO = [
+      { nome: 'Administrador Geral DMTT', matricula: 'ADM-001', login: 'admin', senha: 'dmtt@2026', role: 'admin' },
+      { nome: 'Agente Operador Plantonista', matricula: 'OP-101', login: 'operador', senha: '123456', role: 'operador' }
+    ];
+
+    function obterUsuariosBanco() {
+      try {
+        let lista = JSON.parse(localStorage.getItem(CHAVE_USUARIOS) || 'null');
+        if (!lista || !Array.isArray(lista) || !lista.length) {
+          lista = [...USUARIOS_PADRAO];
+          localStorage.setItem(CHAVE_USUARIOS, JSON.stringify(lista));
+        }
+        return lista;
+      } catch (e) { return [...USUARIOS_PADRAO]; }
+    }
+
+    function salvarUsuariosBanco(lista) {
+      try { localStorage.setItem(CHAVE_USUARIOS, JSON.stringify(lista)); } catch (e) {}
+    }
+
+    function realizarLogin(e) {
+      if (e) e.preventDefault();
+      const login = document.getElementById('login_user').value.trim().toLowerCase();
+      const senha = document.getElementById('login_pass').value.trim();
+      const boxErro = document.getElementById('login_erro');
+      const encontrado = obterUsuariosBanco().find(u => u.login.toLowerCase() === login && u.senha === senha);
+
+      if (!encontrado) {
+        boxErro.textContent = 'Usuário ou senha inválidos!';
+        boxErro.classList.remove('hidden');
+        return;
+      }
+      boxErro.classList.add('hidden');
+      usuarioLogado = encontrado;
+
+      document.getElementById('login_screen').classList.add('hidden');
+      document.getElementById('app_screen').classList.remove('hidden');
+      document.getElementById('badge_usuario_logado').textContent = `${usuarioLogado.nome} (${usuarioLogado.role.toUpperCase()})`;
+
+      if (!document.getElementById('agente_nome').value) {
+        document.getElementById('agente_nome').value = usuarioLogado.nome;
+        document.getElementById('agente_matricula').value = usuarioLogado.matricula;
+      }
+      document.getElementById('tab-btn-8').classList.toggle('hidden', usuarioLogado.role !== 'admin');
+      document.getElementById('bst_numero').value = calcularProximoNumeroBST();
+      renderizarTabelaUsuarios();
+      renderizarTabelaBoletins();
+      inicializarCanvasCroqui();
+    }
+
+    function realizarLogout() {
+      usuarioLogado = null;
+      definirModoSomenteLeitura(false);
+      document.getElementById('login_pass').value = '';
+      document.getElementById('app_screen').classList.add('hidden');
+      document.getElementById('login_screen').classList.remove('hidden');
+      mudarAba(1);
+    }
+
+    function alternarVisibilidadeSenha() {
+      const inp = document.getElementById('login_pass');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function abrirModalMinhaSenha() {
+      document.getElementById('inp_senha_atual').value = '';
+      document.getElementById('inp_nova_senha').value = '';
+      document.getElementById('inp_conf_senha').value = '';
+      document.getElementById('modal_minha_senha').classList.remove('hidden');
+    }
+
+    function fecharModalMinhaSenha() {
+      document.getElementById('modal_minha_senha').classList.add('hidden');
+    }
+
+    function salvarMinhaNovaSenha(e) {
+      e.preventDefault();
+      if (!usuarioLogado) return;
+      const atual = document.getElementById('inp_senha_atual').value.trim();
+      const nova = document.getElementById('inp_nova_senha').value.trim();
+      const conf = document.getElementById('inp_conf_senha').value.trim();
+
+      const lista = obterUsuariosBanco();
+      const idx = lista.findIndex(u => u.login.toLowerCase() === usuarioLogado.login.toLowerCase());
+      if (idx < 0 || lista[idx].senha !== atual) return alert('A senha atual informada está incorreta!');
+      if (nova !== conf) return alert('A nova senha e a confirmação não coincidem!');
+
+      lista[idx].senha = nova;
+      usuarioLogado.senha = nova;
+      salvarUsuariosBanco(lista);
+      fecharModalMinhaSenha();
+      alert('Sua senha foi alterada com sucesso!');
+    }
+
+    function adminAlterarSenhaUsuario(loginAlvo) {
+      if (!usuarioLogado || usuarioLogado.role !== 'admin') return;
+      const nova = prompt(`Digite a NOVA SENHA para o usuário "${loginAlvo}" (mínimo 4 caracteres):`);
+      if (nova === null) return;
+      if (nova.trim().length < 4) return alert('A senha deve ter no mínimo 4 caracteres.');
+
+      const lista = obterUsuariosBanco();
+      const idx = lista.findIndex(u => u.login.toLowerCase() === loginAlvo.toLowerCase());
+      if (idx < 0) return;
+      lista[idx].senha = nova.trim();
+      if (usuarioLogado.login.toLowerCase() === loginAlvo.toLowerCase()) usuarioLogado.senha = nova.trim();
+      salvarUsuariosBanco(lista);
+      alert(`Senha do usuário "${loginAlvo}" redefinida com sucesso!`);
+    }
+
+    function criarNovoUsuario(e) {
+      e.preventDefault();
+      if (!usuarioLogado || usuarioLogado.role !== 'admin') return;
+      const nome = document.getElementById('novo_user_nome').value.trim();
+      const matricula = document.getElementById('novo_user_mat').value.trim();
+      const login = document.getElementById('novo_user_login').value.trim().toLowerCase();
+      const senha = document.getElementById('novo_user_senha').value.trim();
+      const role = document.getElementById('novo_user_role').value;
+      const lista = obterUsuariosBanco();
+      if (lista.some(u => u.login.toLowerCase() === login)) return alert('Já existe um usuário com este login!');
+      lista.push({ nome, matricula, login, senha, role });
+      salvarUsuariosBanco(lista);
+      e.target.reset();
+      renderizarTabelaUsuarios();
+      alert(`Usuário "${login}" criado com sucesso!`);
+    }
+
+    function removerUsuario(loginAlvo) {
+      if (loginAlvo === 'admin') return alert('O Administrador principal não pode ser removido.');
+      if (!confirm(`Revogar acesso do usuário "${loginAlvo}"?`)) return;
+      salvarUsuariosBanco(obterUsuariosBanco().filter(u => u.login !== loginAlvo));
+      renderizarTabelaUsuarios();
+    }
+
+    function renderizarTabelaUsuarios() {
+      const tbody = document.getElementById('tabela_usuarios');
+      if (!tbody) return;
+      tbody.innerHTML = obterUsuariosBanco().map(u => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-2.5 font-semibold">${esc(u.nome)}</td>
+          <td class="p-2.5">${esc(u.matricula)}</td>
+          <td class="p-2.5 font-mono font-bold text-green-900">${esc(u.login)}</td>
+          <td class="p-2.5 uppercase font-bold text-[10px]">${esc(u.role)}</td>
+          <td class="p-2.5 text-right space-x-2">
+            <button onclick="adminAlterarSenhaUsuario('${esc(u.login)}')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded font-bold">
+              <i class="fa-solid fa-key"></i> Alterar Senha
+            </button>
+            ${u.login !== 'admin' ? `<button onclick="removerUsuario('${esc(u.login)}')" class="bg-red-600 hover:bg-red-500 text-white px-2.5 py-1 rounded font-bold">Revogar</button>` : ''}
+          </td>
+        </tr>`).join('');
+    }
+
+    // ============================================================================
+    // 2. CAPTURA DE ENDEREÇO POR GPS CORRIGIDA (MULTI-API: BIGDATACLOUD + NOMINATIM)
+    // ============================================================================
+    function exibirStatusGPS(tipo, htmlMsg) {
+      const box = document.getElementById('status_gps_box');
+      if (!box) return;
+      box.className = 'mb-4 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex flex-wrap items-center justify-between gap-2 border ';
+      if (tipo === 'loading') box.className += 'bg-blue-50 text-blue-800 border-blue-200';
+      else if (tipo === 'sucesso') box.className += 'bg-emerald-50 text-emerald-800 border-emerald-300';
+      else if (tipo === 'aviso') box.className += 'bg-amber-50 text-amber-800 border-amber-300';
+      else box.className += 'bg-red-50 text-red-800 border-red-300';
+      box.innerHTML = htmlMsg;
+    }
+
+    async function buscarEnderecoPorCoordenadasMultiAPI(lat, lng) {
+      let logradouro = '', numero = '', bairro = '', cidade = '', uf = 'BA', referencia = '';
+
+      // Tentativa 1: OpenStreetMap Nominatim (Traz nome exato da rua e número)
+      try {
+        const r1 = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=pt-BR`);
+        if (r1.ok) {
+          const d1 = await r1.json();
+          const a = d1.address || {};
+          logradouro = a.road || a.pedestrian || a.highway || a.street || a.residential || a.path || d1.name || '';
+          numero = a.house_number ? `, Nº ${a.house_number}` : '';
+          bairro = a.suburb || a.neighbourhood || a.quarter || a.city_district || a.district || a.village || a.hamlet || '';
+          cidade = a.city || a.town || a.municipality || a.county || '';
+          uf = a.state_code ? a.state_code.toUpperCase() : (a.state === 'Pernambuco' ? 'PE' : 'BA');
+          referencia = a.amenity || a.shop || a.building || a.office || a.leisure || '';
+        }
+      } catch (e) {}
+
+      // Tentativa 2: BigDataCloud Reverse Geocoding (Funciona mesmo em file:// sem bloqueio de CORS)
+      if (!logradouro || !bairro || !cidade) {
+        try {
+          const r2 = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=pt`);
+          if (r2.ok) {
+            const d2 = await r2.json();
+            if (!cidade) cidade = d2.city || d2.locality || 'Casa Nova';
+            if (!bairro) bairro = d2.locality || '';
+            if (d2.principalSubdivisionCode) uf = d2.principalSubdivisionCode.replace('BR-', '');
+            if (!logradouro && Array.isArray(d2.localityInfo?.informative)) {
+              const infoVia = d2.localityInfo.informative.find(x => x.description && (x.description.includes('road') || x.description.includes('street') || x.name));
+              if (infoVia && infoVia.name) logradouro = infoVia.name;
+            }
+            if (!logradouro && d2.locality) logradouro = `Via urbana em ${d2.locality}`;
+          }
+        } catch (e) {}
+      }
+
+      // Tentativa 3: Photon Komoot (Base OpenStreetMap alternativa sem restrição de User-Agent)
+      if (!logradouro || logradouro.startsWith('Via urbana')) {
+        try {
+          const r3 = await fetch(`https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`);
+          if (r3.ok) {
+            const d3 = await r3.json();
+            const prop = d3.features?.[0]?.properties;
+            if (prop) {
+              if (prop.street || prop.name) logradouro = prop.street || prop.name;
+              if (prop.housenumber && !numero) numero = `, Nº ${prop.housenumber}`;
+              if (!bairro && (prop.district || prop.suburb)) bairro = prop.district || prop.suburb;
+              if (!cidade && prop.city) cidade = prop.city;
+            }
+          }
+        } catch (e) {}
+      }
+
+      return { logradouro, numero, bairro, cidade: cidade || 'Casa Nova', uf, referencia };
+    }
+
+    function capturarLocalizacaoGPS() {
+      if (!navigator.geolocation) return exibirStatusGPS('erro', 'Seu navegador não suporta GPS.');
+      const btn = document.getElementById('btn_capturar_gps');
+      const txtOrig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-yellow-300"></i> <span>Consultando endereço...</span>`;
+      exibirStatusGPS('loading', `<span><i class="fa-solid fa-satellite-dish fa-fade mr-1"></i> Capturando coordenadas GPS e convertendo em endereço postal...</span>`);
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude.toFixed(6);
+          const lng = pos.coords.longitude.toFixed(6);
+          const prec = Math.round(pos.coords.accuracy || 0);
+          const coords = `${lat}, ${lng}`;
+          document.getElementById('loc_coordenadas').value = coords;
+
+          const linkMapa = document.getElementById('link_ver_mapa_gps');
+          linkMapa.href = `https://www.google.com/maps?q=${lat},${lng}`;
+          linkMapa.classList.remove('hidden');
+
+          const agora = new Date();
+          const dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+          document.getElementById('loc_data').valueAsDate = agora;
+          document.getElementById('loc_dia').value = dias[agora.getDay()];
+          const hhmm = `${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
+          if (!document.getElementById('loc_hora_cheg').value) document.getElementById('loc_hora_cheg').value = hhmm;
+          if (!document.getElementById('loc_hora_ocor').value) document.getElementById('loc_hora_ocor').value = hhmm;
+
+          const end = await buscarEnderecoPorCoordenadasMultiAPI(lat, lng);
+          if (end.logradouro) {
+            document.getElementById('loc_local').value = `${end.logradouro}${end.numero}`;
+            if (end.bairro) document.getElementById('loc_bairro').value = end.bairro;
+            document.getElementById('loc_cidade').value = `${end.cidade} - ${end.uf}`;
+            document.getElementById('loc_ref').value = end.referencia ? `Próx. a ${end.referencia} (GPS ±${prec}m)` : `Margem GPS ±${prec}m`;
+            exibirStatusGPS('sucesso', `<span><i class="fa-solid fa-circle-check mr-1"></i> <strong>Endereço preenchido:</strong> ${esc(end.logradouro)}${esc(end.numero)} - ${esc(end.bairro || end.cidade)}</span><span class="font-mono text-[11px]">${esc(coords)}</span>`);
+          } else {
+            document.getElementById('loc_local').value = `Trecho s/ denominação oficial (${end.cidade} - ${end.uf})`;
+            document.getElementById('loc_ref').value = `Coordenadas GPS: ${coords} (±${prec}m)`;
+            exibirStatusGPS('aviso', `<span>Local sem nome de rua cadastrado no mapa ou aparelho sem internet. Coordenadas salvas na referência.</span>`);
+          }
+          btn.disabled = false;
+          btn.innerHTML = txtOrig;
+        },
+        () => {
+          btn.disabled = false;
+          btn.innerHTML = txtOrig;
+          exibirStatusGPS('erro', 'Permissão de GPS negada ou sinal indisponível.');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    }
+
+    // ============================================================================
+    // 3. VALIDADOR OFICIAL DE CNH (DENATRAN/SENATRAN) E CPF/CNPJ
+    // ============================================================================
+    function validarCalculoCNH(cnh) {
+      const s = String(cnh || '').replace(/\D/g, '');
+      if (s.length !== 11 || /^(\d)\1{10}$/.test(s)) return false;
+
+      let dsc = 0, soma1 = 0;
+      for (let i = 0, v = 9; i < 9; i++, v--) {
+        soma1 += parseInt(s[i], 10) * v;
+      }
+      let dv1 = soma1 % 11;
+      if (dv1 >= 10) { dv1 = 0; dsc = 2; }
+
+      let soma2 = 0;
+      for (let i = 0, v = 1; i < 9; i++, v++) {
+        soma2 += parseInt(s[i], 10) * v;
+      }
+      let resto = soma2 % 11;
+      let dv2 = (resto >= 10) ? 0 : resto - dsc;
+      if (dv2 < 0) dv2 += 11;
+      if (dv2 >= 10) dv2 = 0;
+
+      return dv1 === parseInt(s[9], 10) && dv2 === parseInt(s[10], 10);
+    }
+
+    function aplicarMascaraEValidarCNH(inputEl) {
+      const digitos = inputEl.value.replace(/\D/g, '').slice(0, 11);
+      inputEl.value = digitos;
+      const msgEl = inputEl.parentElement.querySelector('.msg-validacao-cnh');
+
+      if (!digitos) {
+        inputEl.classList.remove('doc-valido', 'doc-invalido');
+        if (msgEl) msgEl.textContent = '';
+        return true;
+      }
+      const ok = validarCalculoCNH(digitos);
+      inputEl.classList.toggle('doc-valido', ok);
+      inputEl.classList.toggle('doc-invalido', !ok);
+      if (msgEl) {
+        msgEl.className = `msg-validacao-cnh text-[10px] font-extrabold mt-0.5 block ${ok ? 'text-green-700' : 'text-red-600'}`;
+        msgEl.textContent = ok ? '✓ CNH Válida (11 dígitos)' : (digitos.length < 11 ? '✗ CNH Incompleta (11 dígitos)' : '✗ CNH Inválida');
+      }
+      return ok;
+    }
+
+    function validarCalculoCPF(cpf) {
+      const s = (cpf || '').replace(/\D/g, '');
+      if (s.length !== 11 || /^(\d)\1{10}$/.test(s)) return false;
+      let soma = 0;
+      for (let i = 0; i < 9; i++) soma += parseInt(s[i], 10) * (10 - i);
+      let r = (soma * 10) % 11; if (r >= 10) r = 0;
+      if (r !== parseInt(s[9], 10)) return false;
+      soma = 0;
+      for (let i = 0; i < 10; i++) soma += parseInt(s[i], 10) * (11 - i);
+      r = (soma * 10) % 11; if (r >= 10) r = 0;
+      return r === parseInt(s[10], 10);
+    }
+
+    function validarCalculoCNPJ(cnpj) {
+      const s = (cnpj || '').replace(/\D/g, '');
+      if (s.length !== 14 || /^(\d)\1{13}$/.test(s)) return false;
+      const calc = (base) => {
+        let soma = 0, pos = base.length - 7;
+        for (let i = base.length; i >= 1; i--) { soma += parseInt(base[base.length - i], 10) * pos--; if (pos < 2) pos = 9; }
+        return soma % 11 < 2 ? 0 : 11 - (soma % 11);
+      };
+      return calc(s.slice(0, 12)) === parseInt(s[12], 10) && calc(s.slice(0, 13)) === parseInt(s[13], 10);
+    }
+
+    function aplicarMascaraEValidarCPF(inputEl, aceitarCNPJ = false) {
+      let d = inputEl.value.replace(/\D/g, '').slice(0, aceitarCNPJ ? 14 : 11);
+      if (d.length <= 11) d = d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+      else d = d.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2');
+      inputEl.value = d;
+      const msgEl = inputEl.parentElement.querySelector('.msg-validacao-cpf');
+      const puro = d.replace(/\D/g, '');
+      if (!puro) { inputEl.classList.remove('doc-valido', 'doc-invalido'); if (msgEl) msgEl.textContent = ''; return true; }
+      const ok = puro.length === 11 ? validarCalculoCPF(puro) : (aceitarCNPJ && puro.length === 14 ? validarCalculoCNPJ(puro) : false);
+      inputEl.classList.toggle('doc-valido', ok);
+      inputEl.classList.toggle('doc-invalido', !ok);
+      if (msgEl) {
+        msgEl.className = `msg-validacao-cpf text-[10px] font-extrabold mt-0.5 block ${ok ? 'text-green-700' : 'text-red-600'}`;
+        msgEl.textContent = ok ? '✓ Documento Válido' : '✗ Número Inválido';
+      }
+      return ok;
+    }
+
+    function verificarDocumentosAntesDeSalvar() {
+      for (const c of document.querySelectorAll('.input-cpf-validado')) {
+        if (c.value.replace(/\D/g, '').length > 0 && !aplicarMascaraEValidarCPF(c, c.dataset.aceitaCnpj === 'true')) {
+          return { valido: false, elemento: c, rotulo: c.dataset.rotulo || 'CPF' };
+        }
+      }
+      for (const cnh of document.querySelectorAll('.input-cnh-validado')) {
+        if (cnh.value.replace(/\D/g, '').length > 0 && !aplicarMascaraEValidarCNH(cnh)) {
+          return { valido: false, elemento: cnh, rotulo: cnh.dataset.rotulo || 'CNH' };
+        }
+      }
+      return { valido: true };
+    }
+
+    // ============================================================================
+    // 4. COMPARTILHAMENTO POR WHATSAPP E E-MAIL
+    // ============================================================================
+    function montarResumoTextoBoletim(b) {
+      const veics = (b.veiculos || []).map((v, i) => `• V${i+1}: ${v.modelo || 'S/M'} - Placa: ${v.placa || 'S/P'} (Condutor: ${v.condutor || 'Não inf.'})`).join('\n');
+      const classif = (b.classificacoes || []).join(', ') || 'Não informada';
+      return `*DEPARTAMENTO MUNICIPAL DE TRÂNSITO DE CASA NOVA-BA (DMTT)*\n` +
+        `*BOLETIM DE SINISTRO DE TRÂNSITO - ${b.bst_numero}*\n\n` +
+        `📍 *Local:* ${b.loc_local || '-'} (${b.loc_bairro || '-'}) - ${b.loc_cidade || 'Casa Nova - BA'}\n` +
+        `📌 *Referência/GPS:* ${b.loc_ref || '-'} ${b.loc_coordenadas ? `[${b.loc_coordenadas}]` : ''}\n` +
+        `📅 *Data/Hora:* ${b.loc_data || '-'} às ${b.loc_hora_ocor || '-'}\n` +
+        `⚠️ *Classificação:* ${classif} (Vítimas: ${b.num_vitimas || 0} | Feridos: ${b.num_feridos || 0} | Mortos: ${b.num_mortos || 0})\n\n` +
+        `🚗 *Veículos Envolvidos:*\n${veics || 'Nenhum veículo listado'}\n\n` +
+        `📝 *Dinâmica do Sinistro:*\n${b.desc_dinamica || 'Sem relato.'}\n\n` +
+        `👮 *Agente Responsável:* ${b.agente_nome || '-'} (Mat.: ${b.agente_matricula || '-'})`;
+    }
+
+    function compartilharWhatsAppAtual() {
+      const b = coletarObjetoBoletimAtual();
+      const texto = montarResumoTextoBoletim(b);
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+    }
+
+    function compartilharEmailAtual() {
+      const b = coletarObjetoBoletimAtual();
+      const assunto = `Boletim de Sinistro de Trânsito ${b.bst_numero} - DMTT Casa Nova-BA`;
+      const corpo = montarResumoTextoBoletim(b).replace(/\*/g, '');
+      window.location.href = `mailto:?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+    }
+
+    function compartilharBoletimSalvo(numeroBST, canal) {
+      const b = obterBoletinsBanco().find(x => x.bst_numero === numeroBST);
+      if (!b) return;
+      const texto = montarResumoTextoBoletim(b);
+      if (canal === 'whatsapp') {
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+      } else {
+        const assunto = `Boletim de Sinistro de Trânsito ${b.bst_numero} - DMTT Casa Nova-BA`;
+        window.location.href = `mailto:?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(texto.replace(/\*/g, ''))}`;
+      }
+    }
+
+    // ==================== FOTOS E ASSINATURAS ====================
+    function comprimirImagemBase64(file, maxW = 750, qual = 0.7) {
+      return new Promise((resolve, reject) => {
+        const rd = new FileReader();
+        rd.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            let w = img.width, h = img.height;
+            if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(c.toDataURL('image/jpeg', qual));
+          };
+          img.onerror = reject; img.src = ev.target.result;
+        };
+        rd.onerror = reject; rd.readAsDataURL(file);
+      });
+    }
+
+    async function processarFotosVeiculo(numVeic, inputEl) {
+      const files = Array.from(inputEl.files || []);
+      if (!fotosVeiculos[numVeic]) fotosVeiculos[numVeic] = [];
+      for (const f of files) {
+        if (fotosVeiculos[numVeic].length >= 6) { alert(`Máximo de 6 fotos para V-${numVeic}.`); break; }
+        const dataUrl = await comprimirImagemBase64(f);
+        fotosVeiculos[numVeic].push({ id: Date.now() + Math.random(), dataUrl });
+      }
+      inputEl.value = '';
+      renderizarGaleriaFotosVeiculo(numVeic);
+    }
+
+    function removerFotoVeiculo(numVeic, idFoto) {
+      fotosVeiculos[numVeic] = (fotosVeiculos[numVeic] || []).filter(f => f.id !== idFoto);
+      renderizarGaleriaFotosVeiculo(numVeic);
+    }
+
+    function renderizarGaleriaFotosVeiculo(numVeic) {
+      const gal = document.getElementById(`v${numVeic}_galeria_fotos`);
+      if (!gal) return;
+      const lista = fotosVeiculos[numVeic] || [];
+      if (!lista.length) {
+        gal.innerHTML = `<span class="text-[11px] text-slate-400 italic">Nenhuma foto anexada para V-${numVeic}.</span>`;
+        return;
+      }
+      gal.innerHTML = lista.map((f, i) => `
+        <div class="relative w-24 h-20 rounded-lg overflow-hidden border border-slate-300 shadow-sm bg-slate-100">
+          <img src="${f.dataUrl}" class="w-full h-full object-cover" />
+          <span class="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] font-bold text-center">V-${numVeic} #${i+1}</span>
+          <button type="button" onclick="removerFotoVeiculo(${numVeic}, ${f.id})" class="absolute top-1 right-1 bg-red-600 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>`).join('');
+    }
+
+    function ativarCanvasAssinatura(canvasId) {
+      const sc = document.getElementById(canvasId);
+      if (!sc) return;
+      const sctx = sc.getContext('2d');
+      let desenhandoSig = false;
+      const pos = (e) => {
+        const r = sc.getBoundingClientRect();
+        const cx = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches && e.touches.length ? e.touches[0].clientY : e.clientY;
+        return { x: (cx - r.left) * (sc.width / (r.width || sc.width)), y: (cy - r.top) * (sc.height / (r.height || sc.height)) };
+      };
+      const ini = (e) => { e.preventDefault(); desenhandoSig = true; const p = pos(e); sctx.beginPath(); sctx.moveTo(p.x, p.y); };
+      const mov = (e) => {
+        if (!desenhandoSig) return;
+        e.preventDefault();
+        const p = pos(e); sctx.lineTo(p.x, p.y); sctx.strokeStyle = '#0f172a'; sctx.lineWidth = 2.4; sctx.lineCap = 'round'; sctx.stroke();
+      };
+      const fim = () => { desenhandoSig = false; };
+      sc.addEventListener('mousedown', ini); sc.addEventListener('mousemove', mov); window.addEventListener('mouseup', fim);
+      sc.addEventListener('touchstart', ini, { passive: false }); sc.addEventListener('touchmove', mov, { passive: false }); sc.addEventListener('touchend', fim);
+    }
+
+    function limparCanvasAssinatura(canvasId) {
+      const sc = document.getElementById(canvasId);
+      if (sc) sc.getContext('2d').clearRect(0, 0, sc.width, sc.height);
+    }
+
+    function adicionarAssinaturaEnvolvido(dados = null) {
+      const idUnico = Date.now() + Math.floor(Math.random() * 1000);
+      const canvasId = `sig_env_${idUnico}`;
+      assinaturasEnvolvidos.push({ id: idUnico, canvasId });
+      const div = document.createElement('div');
+      div.id = `card_sig_${idUnico}`;
+      div.className = "border-2 border-slate-300 rounded-xl p-3 bg-slate-50 space-y-2 text-xs";
+      div.innerHTML = `
+        <div class="flex items-center justify-between border-b pb-1">
+          <span class="font-extrabold text-green-900 uppercase"><i class="fa-solid fa-signature"></i> Assinatura do Envolvido</span>
+          <div class="flex gap-1.5">
+            <button type="button" onclick="limparCanvasAssinatura('${canvasId}')" class="bg-slate-200 px-2 py-0.5 rounded font-bold text-[11px]">Limpar</button>
+            <button type="button" onclick="removerAssinaturaEnvolvido(${idUnico})" class="text-red-600 font-bold px-1"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <input type="text" class="sig-env-nome col-span-2 border rounded-lg p-1.5 bg-white" placeholder="Nome completo de quem assina" value="${esc(dados?.nome || '')}" />
+          <select class="sig-env-papel border rounded-lg p-1.5 bg-white font-semibold">
+            <option ${dados?.papel === 'Condutor V1' ? 'selected' : ''}>Condutor V1</option>
+            <option ${dados?.papel === 'Condutor V2' ? 'selected' : ''}>Condutor V2</option>
+            <option ${dados?.papel === 'Condutor V3' ? 'selected' : ''}>Condutor V3</option>
+            <option ${dados?.papel === 'Testemunha' ? 'selected' : ''}>Testemunha</option>
+            <option ${dados?.papel === 'Vítima' ? 'selected' : ''}>Vítima</option>
+          </select>
+        </div>
+        <div class="border-2 border-dashed border-slate-400 rounded-lg bg-white overflow-hidden">
+          <canvas id="${canvasId}" width="440" height="120" class="sig-canvas w-full h-[110px]"></canvas>
+        </div>`;
+      document.getElementById('assinaturas_envolvidos_container').appendChild(div);
+      setTimeout(() => {
+        ativarCanvasAssinatura(canvasId);
+        if (dados?.dataUrl) {
+          const c = document.getElementById(canvasId);
+          const img = new Image();
+          img.onload = () => c.getContext('2d').drawImage(img, 0, 0);
+          img.src = dados.dataUrl;
+        }
+      }, 40);
+    }
+
+    function removerAssinaturaEnvolvido(idUnico) {
+      assinaturasEnvolvidos = assinaturasEnvolvidos.filter(a => a.id !== idUnico);
+      document.getElementById(`card_sig_${idUnico}`)?.remove();
+    }
+
+    function coletarAssinaturasEnvolvidos() {
+      return assinaturasEnvolvidos.map(item => {
+        const card = document.getElementById(`card_sig_${item.id}`);
+        const c = document.getElementById(item.canvasId);
+        if (!card || !c) return null;
+        return {
+          nome: card.querySelector('.sig-env-nome')?.value || '',
+          papel: card.querySelector('.sig-env-papel')?.value || 'Envolvido',
+          dataUrl: c.toDataURL('image/png')
+        };
+      }).filter(Boolean);
+    }
+
+    // ==================== MOTOR DE CROQUI INTERATIVO (PÁGINA 5) ====================
+    let canvas, ctx, croquiGabarito = 'ambos', croquiModo = 'mover', croquiObjetos = [], croquiTracos = [], tracoAtual = null, objSelecionado = null, arrastandoObj = false, offsetArrasto = { x: 0, y: 0 };
+
+    function garantirCanvasPronto() {
+      if (!canvas) canvas = document.getElementById('canvas_croqui');
+      if (canvas && !ctx) ctx = canvas.getContext('2d');
+      return Boolean(canvas && ctx);
+    }
+
+    function inicializarCanvasCroqui() {
+      if (!garantirCanvasPronto()) return;
+      const getPos = (e) => {
+        const r = canvas.getBoundingClientRect();
+        const cx = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches && e.touches.length ? e.touches[0].clientY : e.clientY;
+        return { x: (cx - r.left) * (canvas.width / (r.width || canvas.width)), y: (cy - r.top) * (canvas.height / (r.height || canvas.height)) };
+      };
+      const down = (e) => {
+        const p = getPos(e);
+        if (croquiModo === 'mover') {
+          objSelecionado = [...croquiObjetos].reverse().find(o => Math.hypot(p.x - o.x, p.y - o.y) <= 34) || null;
+          document.getElementById('label_obj_selecionado').textContent = objSelecionado ? `Selecionado: ${objSelecionado.tipo} (${objSelecionado.angulo}°)` : 'Nenhum objeto selecionado';
+          if (objSelecionado) { e.preventDefault(); arrastandoObj = true; offsetArrasto = { x: p.x - objSelecionado.x, y: p.y - objSelecionado.y }; }
+          renderizarCroquiCompleto();
+        } else {
+          e.preventDefault();
+          tracoAtual = { cor: document.getElementById('croqui_cor').value, pontos: [p] };
+          croquiTracos.push(tracoAtual);
+          renderizarCroquiCompleto();
+        }
+      };
+      const move = (e) => {
+        if (croquiModo === 'mover' && arrastandoObj && objSelecionado) {
+          e.preventDefault();
+          const p = getPos(e); objSelecionado.x = p.x - offsetArrasto.x; objSelecionado.y = p.y - offsetArrasto.y;
+          renderizarCroquiCompleto();
+        } else if (croquiModo === 'desenhar' && tracoAtual) {
+          e.preventDefault(); tracoAtual.pontos.push(getPos(e)); renderizarCroquiCompleto();
+        }
+      };
+      const up = () => { arrastandoObj = false; tracoAtual = null; };
+      canvas.onmousedown = down; canvas.onmousemove = move; window.onmouseup = up;
+      canvas.ontouchstart = down; canvas.ontouchmove = move; canvas.ontouchend = up;
+      renderizarCroquiCompleto();
+    }
+
+    function definirModoCroqui(m) {
+      croquiModo = m;
+      document.getElementById('btn_modo_mover').classList.toggle('ativo', m === 'mover');
+      document.getElementById('btn_modo_desenhar').classList.toggle('ativo', m === 'desenhar');
+    }
+
+    function mudarGabaritoCroqui(t) { croquiGabarito = t; renderizarCroquiCompleto(); }
+
+    function adicionarObjetoCroqui(tipo) {
+      definirModoCroqui('mover');
+      const rot = document.getElementById('sel_id_veiculo_croqui').value;
+      const novo = { id: Date.now() + Math.random(), tipo, rotulo: ['auto_antes','auto_depois','motocicleta','onibus_caminhao','ciclo'].includes(tipo) ? rot : '', x: 300, y: 220, angulo: 0 };
+      croquiObjetos.push(novo); objSelecionado = novo; renderizarCroquiCompleto();
+    }
+
+    function rodarObjetoSelecionado(g) { if (objSelecionado) { objSelecionado.angulo = (objSelecionado.angulo + g) % 360; renderizarCroquiCompleto(); } }
+    function removerObjetoSelecionado() { if (objSelecionado) { croquiObjetos = croquiObjetos.filter(o => o.id !== objSelecionado.id); objSelecionado = null; renderizarCroquiCompleto(); } }
+    function desfazerUltimoTraco() { croquiTracos.pop(); renderizarCroquiCompleto(); }
+    function limparCroquiTotal() { croquiObjetos = []; croquiTracos = []; objSelecionado = null; renderizarCroquiCompleto(); }
+
+    function renderizarCroquiCompleto(ocultarSel = false) {
+      if (!garantirCanvasPronto()) return;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.8;
+
+      if (croquiGabarito === 'ambos' || croquiGabarito === 'intersecao') {
+        const cx = croquiGabarito === 'intersecao' ? 460 : 310, cy = 225;
+        ctx.save(); ctx.setLineDash([7, 6]); ctx.beginPath(); ctx.arc(cx, cy, 42, 0, Math.PI * 2); ctx.stroke();
+        for (let k = 0; k < 8; k++) {
+          const a1 = k * (Math.PI / 4) - (Math.PI / 16), a2 = k * (Math.PI / 4) + (Math.PI / 16);
+          ctx.beginPath();
+          ctx.moveTo(cx + 195 * Math.cos(a1), cy + 195 * Math.sin(a1));
+          ctx.lineTo(cx + 68 * Math.cos(a1), cy + 68 * Math.sin(a1));
+          ctx.lineTo(cx + 68 * Math.cos(a2), cy + 68 * Math.sin(a2));
+          ctx.lineTo(cx + 195 * Math.cos(a2), cy + 195 * Math.sin(a2));
+          ctx.stroke();
+        }
+        ctx.restore();
+        ctx.fillStyle = '#1e293b'; ctx.font = 'bold 11px Inter'; ctx.fillText('ACIDENTE EM INTERSEÇÃO OU ROTATÓRIA', cx - 120, 445);
+      }
+
+      if (croquiGabarito === 'ambos' || croquiGabarito === 'reta') {
+        if (croquiGabarito === 'ambos') {
+          ctx.beginPath(); ctx.moveTo(690, 25); ctx.lineTo(690, 415); ctx.moveTo(800, 25); ctx.lineTo(800, 415); ctx.stroke();
+          ctx.save(); ctx.setLineDash([14, 12]); ctx.beginPath(); ctx.moveTo(745, 25); ctx.lineTo(745, 415); ctx.stroke(); ctx.restore();
+          ctx.fillStyle = '#1e293b'; ctx.font = 'bold 11px Inter'; ctx.fillText('FORA DE INTERSEÇÃO', 685, 445);
+        } else {
+          ctx.beginPath(); ctx.moveTo(40, 140); ctx.lineTo(880, 140); ctx.moveTo(40, 310); ctx.lineTo(880, 310); ctx.stroke();
+          ctx.save(); ctx.setLineDash([18, 14]); ctx.beginPath(); ctx.moveTo(40, 225); ctx.lineTo(880, 225); ctx.stroke(); ctx.restore();
+        }
+      }
+
+      croquiTracos.forEach(t => {
+        if (t.pontos.length < 2) return;
+        ctx.save(); ctx.strokeStyle = t.cor; ctx.lineWidth = 2.8; ctx.beginPath();
+        ctx.moveTo(t.pontos[0].x, t.pontos[0].y); t.pontos.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke(); ctx.restore();
+      });
+
+      croquiObjetos.forEach(o => {
+        ctx.save(); ctx.translate(o.x, o.y); ctx.rotate((o.angulo * Math.PI) / 180);
+        if (!ocultarSel && objSelecionado && objSelecionado.id === o.id) {
+          ctx.save(); ctx.strokeStyle = '#16a34a'; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+        }
+        ctx.strokeStyle = '#0f172a'; ctx.fillStyle = '#0f172a'; ctx.lineWidth = 2.2;
+        if (o.tipo === 'auto_antes' || o.tipo === 'auto_depois') {
+          ctx.fillStyle = o.tipo === 'auto_depois' ? '#0f172a' : '#fff';
+          ctx.beginPath(); ctx.moveTo(-22, -11); ctx.lineTo(10, -11); ctx.lineTo(24, 0); ctx.lineTo(10, 11); ctx.lineTo(-22, 11); ctx.closePath(); ctx.fill(); ctx.stroke();
+          if (o.rotulo) { ctx.fillStyle = o.tipo === 'auto_depois' ? '#fff' : '#0f172a'; ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.fillText(o.rotulo, -4, 4); }
+        } else if (o.tipo === 'motocicleta') {
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-9, 0, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(3, -8); ctx.lineTo(11, -8); ctx.arc(11, 0, 8, -Math.PI/2, Math.PI/2); ctx.lineTo(3, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+          if (o.rotulo) { ctx.fillStyle = '#0f172a'; ctx.font = 'bold 9px Inter'; ctx.textAlign = 'center'; ctx.fillText(o.rotulo, 0, -12); }
+        } else if (o.tipo === 'onibus_caminhao') {
+          ctx.fillStyle = '#fff'; ctx.fillRect(-26, -11, 38, 22); ctx.strokeRect(-26, -11, 38, 22);
+          ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.moveTo(12, -11); ctx.lineTo(27, 0); ctx.lineTo(12, 11); ctx.closePath(); ctx.fill();
+          if (o.rotulo) { ctx.fillStyle = '#0f172a'; ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center'; ctx.fillText(o.rotulo, -7, 4); }
+        } else if (o.tipo === 'ciclo') {
+          ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(18, 0); ctx.moveTo(9, -7); ctx.lineTo(19, 0); ctx.lineTo(9, 7); ctx.moveTo(-10, -7); ctx.lineTo(-10, 7); ctx.stroke();
+        } else if (o.tipo === 'pedestre') {
+          ctx.beginPath(); ctx.arc(0, -10, 4.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(0, 7); ctx.moveTo(-9, -1); ctx.lineTo(9, -1); ctx.moveTo(0, 7); ctx.lineTo(-7, 16); ctx.moveTo(0, 7); ctx.lineTo(7, 16); ctx.stroke();
+        } else if (o.tipo === 'objeto_fixo') {
+          ctx.fillStyle = '#fff'; ctx.fillRect(-18, -10, 36, 20); ctx.strokeRect(-18, -10, 36, 20);
+          ctx.beginPath(); ctx.moveTo(-18, -10); ctx.lineTo(18, 10); ctx.moveTo(18, -10); ctx.lineTo(-18, 10); ctx.stroke();
+        } else if (o.tipo === 'ponto_impacto') {
+          ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3;
+          for (let a = 0; a < 4; a++) { ctx.save(); ctx.rotate((a * Math.PI) / 4); ctx.beginPath(); ctx.moveTo(-13, 0); ctx.lineTo(13, 0); ctx.stroke(); ctx.restore(); }
+        } else if (o.tipo === 'capotagem') {
+          ctx.beginPath(); ctx.moveTo(-22, 8); ctx.bezierCurveTo(-16, -12, -2, -12, 0, 4); ctx.bezierCurveTo(2, 14, 14, 12, 22, -6); ctx.stroke();
+        } else if (o.tipo === 'derrapagem') {
+          ctx.save(); ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(-26, -4); ctx.quadraticCurveTo(0, -9, 26, -4); ctx.moveTo(-26, 5); ctx.quadraticCurveTo(0, 0, 26, 5); ctx.stroke(); ctx.restore();
+        } else if (o.tipo === 'sentido_via') {
+          ctx.beginPath(); ctx.moveTo(-20, -5); ctx.lineTo(20, -5); ctx.lineTo(13, -10); ctx.moveTo(20, 6); ctx.lineTo(-20, 6); ctx.lineTo(-13, 11); ctx.stroke();
+        } else if (o.tipo === 'marcha_re') {
+          ctx.save(); ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(-18, 0); ctx.stroke(); ctx.restore();
+          ctx.font = 'bold 8px Inter'; ctx.fillText('RÉ', 0, -6);
+        }
+        ctx.restore();
+      });
+    }
+
+    // ============================================================================
+    // 5. BANCO DE DADOS E CONTROLE DE AUTORIA (EDITAR PRÓPRIOS / VER DE TERCEIROS)
+    // ============================================================================
+    function obterBoletinsBanco() {
+      try { return JSON.parse(localStorage.getItem(CHAVE_BOLETINS) || '[]'); } catch (e) { return []; }
+    }
+
+    function gravarListaBoletinsLocal(lista) {
+      try { localStorage.setItem(CHAVE_BOLETINS, JSON.stringify(lista)); } catch (e) { alert('Limite de armazenamento atingido. Exporte backup JSON.'); }
+      renderizarTabelaBoletins();
+    }
+
+    function usuarioPodeEditarBoletim(b) {
+      if (!usuarioLogado) return false;
+      if (usuarioLogado.role === 'admin') return true;
+      if (!b || !b.criado_por_login) return true;
+      return b.criado_por_login.toLowerCase() === usuarioLogado.login.toLowerCase();
+    }
+
+    function definirModoSomenteLeitura(somenteLeitura) {
+      modoSomenteLeitura = somenteLeitura;
+      document.getElementById('aviso_somente_leitura').classList.toggle('hidden', !somenteLeitura);
+      const btnSalvar = document.getElementById('btn_salvar_topo');
+      if (btnSalvar) {
+        btnSalvar.disabled = somenteLeitura;
+        btnSalvar.classList.toggle('opacity-40', somenteLeitura);
+        btnSalvar.classList.toggle('cursor-not-allowed', somenteLeitura);
+      }
+    }
+
+    function calcularProximoNumeroBST(numeroBase = '') {
+      const ano = new Date().getFullYear();
+      let maior = 0;
+      obterBoletinsBanco().forEach(b => {
+        const m = String(b.bst_numero || '').match(/(\d+)$/);
+        if (m && parseInt(m[1], 10) > maior) maior = parseInt(m[1], 10);
+      });
+      if (numeroBase) {
+        const mAtual = String(numeroBase).match(/^(.*?)(\d+)$/);
+        if (mAtual) {
+          const prox = Math.max(parseInt(mAtual[2], 10), maior) + 1;
+          return `${mAtual[1]}${String(prox).padStart(mAtual[2].length, '0')}`;
+        }
+      }
+      return `BST-${ano}-${String(maior + 1).padStart(4, '0')}`;
+    }
+
+    function coletarObjetoBoletimAtual() {
+      garantirCanvasPronto();
+      renderizarCroquiCompleto(true);
+      const croquiImg = canvas ? canvas.toDataURL('image/png') : '';
+      renderizarCroquiCompleto(false);
+
+      const dadosVeiculos = veiculos.map((_, idx) => {
+        const n = idx + 1;
+        return {
+          modelo: document.getElementById(`v${n}_modelo`)?.value || '',
+          placa: document.getElementById(`v${n}_placa`)?.value || '',
+          cor_ano: document.getElementById(`v${n}_cor_ano`)?.value || '',
+          municipio: document.getElementById(`v${n}_municipio`)?.value || 'Casa Nova - BA',
+          renavam: document.getElementById(`v${n}_renavam`)?.value || '',
+          tracao: document.getElementById(`v${n}_tracao`)?.value || 'Automotor',
+          especie: document.getElementById(`v${n}_especie`)?.value || 'Passageiro',
+          tipo: document.getElementById(`v${n}_tipo`)?.value || 'Automóvel',
+          categoria_veic: document.getElementById(`v${n}_categoria_veic`)?.value || 'Particular',
+          art279: document.getElementById(`v${n}_art279`)?.checked || false,
+          proprietario: document.getElementById(`v${n}_proprietario`)?.value || '',
+          cpf_proprietario: document.getElementById(`v${n}_cpf_proprietario`)?.value || '',
+          condutor: document.getElementById(`v${n}_condutor`)?.value || '',
+          cpf: document.getElementById(`v${n}_cpf`)?.value || '',
+          cnh: document.getElementById(`v${n}_cnh`)?.value || '',
+          cat_cnh: document.getElementById(`v${n}_cat_cnh`)?.value || '',
+          idade_sexo: document.getElementById(`v${n}_idade_sexo`)?.value || '',
+          ocupantes: document.getElementById(`v${n}_ocupantes`)?.value || '',
+          endereco: document.getElementById(`v${n}_endereco`)?.value || '',
+          avarias_texto: document.getElementById(`v${n}_avarias_texto`)?.value || '',
+          fotos: fotosVeiculos[n] || []
+        };
+      });
+
+      const listaVitimas = Array.from(document.querySelectorAll('#vitimas_container > div')).map(d => ({
+        nome: d.querySelector('.vit-nome')?.value || '',
+        cpf: d.querySelector('.vit-cpf')?.value || '',
+        idade: d.querySelector('.vit-idade')?.value || '',
+        ferimento: d.querySelector('.vit-ferimento')?.value || 'Leves',
+        posicao: d.querySelector('.vit-posicao')?.value || 'Condutor V1',
+        hospital: d.querySelector('.vit-hospital')?.value || '',
+        endereco: d.querySelector('.vit-end')?.value || ''
+      })).filter(v => v.nome || v.cpf || v.hospital);
+
+      const listaTestemunhas = Array.from(document.querySelectorAll('#testemunhas_container > div')).map(d => ({
+        nome: d.querySelector('.test-nome')?.value || '',
+        doc: d.querySelector('.test-doc')?.value || '',
+        endereco: d.querySelector('.test-end')?.value || ''
+      })).filter(t => t.nome || t.doc);
+
+      const listaDeclaracoes = declaracoes.map(dec => {
+        const card = document.getElementById(`card_decl_${dec.id}`);
+        const c = document.getElementById(dec.canvasId);
+        if (!card) return null;
+        return {
+          nome: card.querySelector('.decl-nome')?.value || '',
+          placa: card.querySelector('.decl-placa')?.value || '',
+          relato: document.getElementById(`decl_txt_${dec.id}`)?.value || '',
+          sigDataUrl: c ? c.toDataURL('image/png') : ''
+        };
+      }).filter(d => d && (d.nome || d.relato));
+
+      const frenagem = {};
+      ['dd', 'de', 'td', 'te'].forEach(p => {
+        frenagem[p] = {};
+        [1, 2, 3, 4].forEach(v => { frenagem[p][`v${v}`] = document.getElementById(`fren_${p}_v${v}`)?.value || ''; });
+      });
+
+      const numeroSalvo = document.getElementById('bst_numero').value.trim() || calcularProximoNumeroBST();
+      return {
+        bst_numero: numeroSalvo,
+        loc_local: document.getElementById('loc_local').value,
+        loc_ref: document.getElementById('loc_ref').value,
+        loc_bairro: document.getElementById('loc_bairro').value,
+        loc_cidade: document.getElementById('loc_cidade').value,
+        loc_coordenadas: document.getElementById('loc_coordenadas').value,
+        loc_data: document.getElementById('loc_data').value,
+        loc_dia: document.getElementById('loc_dia').value,
+        loc_hora_ocor: document.getElementById('loc_hora_ocor').value,
+        loc_hora_cheg: document.getElementById('loc_hora_cheg').value,
+        num_vitimas: document.getElementById('num_vitimas').value,
+        num_feridos: document.getElementById('num_feridos').value,
+        num_mortos: document.getElementById('num_mortos').value,
+        classificacoes: Array.from(document.querySelectorAll('.chk-classificacao:checked')).map(c => c.value),
+        circ_local: document.getElementById('circ_local').value,
+        circ_sinalizacao: document.getElementById('circ_sinalizacao').value,
+        circ_semaforo: document.getElementById('circ_semaforo').value,
+        circ_periodo: document.getElementById('circ_periodo').value,
+        circ_clima: document.getElementById('circ_clima').value,
+        circ_pista: document.getElementById('circ_pista').value,
+        circ_pavimentacao: document.getElementById('circ_pavimentacao').value,
+        circ_sentido: document.getElementById('circ_sentido').value,
+        circ_area: document.getElementById('circ_area').value,
+        circ_divisao: document.getElementById('circ_divisao').value,
+        circ_cond_gerais: document.getElementById('circ_cond_gerais').value,
+        circ_placas: Array.from(document.querySelectorAll('.circ-placa:checked')).map(c => c.value),
+        infracoes: Array.from(document.querySelectorAll('.chk-infracao:checked')).map(c => ({ inf: c.dataset.inf, v: c.dataset.v })),
+        condicoes_condutores: Array.from(document.querySelectorAll('.chk-cond-condutor:checked')).map(c => ({ cond: c.dataset.cond, v: c.dataset.v })),
+        veiculos: dadosVeiculos,
+        prop_nome: document.getElementById('prop_nome').value,
+        prop_avarias: document.getElementById('prop_avarias').value,
+        prop_conhecimento: document.getElementById('prop_conhecimento').value,
+        frenagem,
+        vel_dist_embate: document.getElementById('vel_dist_embate').value,
+        vel_dist_visib: document.getElementById('vel_dist_visib').value,
+        vel_max_via: document.getElementById('vel_max_via').value,
+        prov_comunicado: Array.from(document.querySelectorAll('.prov-comunicado:checked')).map(c => c.value),
+        prov_reboque: Array.from(document.querySelectorAll('.prov-reboque:checked')).map(c => c.value),
+        prov_recebedor: document.getElementById('prov_recebedor').value,
+        prov_equipe_nome: document.getElementById('prov_equipe_nome').value,
+        prov_equipe_mat: document.getElementById('prov_equipe_mat').value,
+        vitimas: listaVitimas,
+        testemunhas: listaTestemunhas,
+        desc_dinamica: document.getElementById('desc_dinamica').value,
+        assinaturas_envolvidos: coletarAssinaturasEnvolvidos(),
+        declaracoes: listaDeclaracoes,
+        agente_nome: document.getElementById('agente_nome').value,
+        agente_matricula: document.getElementById('agente_matricula').value,
+        agente_fone: document.getElementById('agente_fone').value,
+        croqui_gabarito: croquiGabarito,
+        croqui_objetos: croquiObjetos,
+        croqui_tracos: croquiTracos,
+        croqui_data_url: croquiImg,
+        atualizado_em: new Date().toLocaleString('pt-BR'),
+        criado_por_login: usuarioLogado ? usuarioLogado.login : 'sistema',
+        autor_registro: usuarioLogado ? `${usuarioLogado.nome} (${usuarioLogado.login})` : 'Agente'
+      };
+    }
+
+    function salvarBoletimBanco() {
+      if (modoSomenteLeitura) {
+        alert('ACESSO NEGADO: Este boletim foi criado por outro usuário. Você tem permissão apenas para visualizar e imprimir.');
+        return;
+      }
+      const vDoc = verificarDocumentosAntesDeSalvar();
+      if (!vDoc.valido) {
+        alert(`ATENÇÃO: O campo "${vDoc.rotulo}" possui um número inválido! Corrija antes de salvar.`);
+        mudarAba(2);
+        vDoc.elemento.focus();
+        return;
+      }
+
+      const reg = coletarObjetoBoletimAtual();
+      const lista = obterBoletinsBanco();
+      const idx = lista.findIndex(b => b.bst_numero === reg.bst_numero);
+
+      if (idx >= 0) {
+        if (!usuarioPodeEditarBoletim(lista[idx])) {
+          alert('ACESSO NEGADO: Você não pode sobrescrever um boletim registrado por outro agente!');
+          return;
+        }
+        reg.criado_por_login = lista[idx].criado_por_login;
+        lista[idx] = reg;
+      } else {
+        lista.unshift(reg);
+      }
+
+      gravarListaBoletinsLocal(lista);
+      const proximoNumero = calcularProximoNumeroBST(reg.bst_numero);
+      novoBoletim(proximoNumero);
+      alert(`Boletim ${reg.bst_numero} salvo com sucesso!\n\nO sistema avançou automaticamente para o próximo boletim: ${proximoNumero}`);
+    }
+
+    function novoBoletim(numForcado = '') {
+      definirModoSomenteLeitura(false);
+      const prox = numForcado || calcularProximoNumeroBST(document.getElementById('bst_numero').value);
+      document.getElementById('bst_numero').value = prox;
+      document.getElementById('loc_local').value = '';
+      document.getElementById('loc_ref').value = '';
+      document.getElementById('loc_bairro').value = '';
+      document.getElementById('loc_coordenadas').value = '';
+      document.getElementById('status_gps_box')?.classList.add('hidden');
+      document.getElementById('link_ver_mapa_gps')?.classList.add('hidden');
+      document.getElementById('desc_dinamica').value = '';
+      document.getElementById('prop_nome').value = '';
+      document.getElementById('prop_avarias').value = '';
+      document.getElementById('prop_conhecimento').value = '';
+      document.querySelectorAll('.chk-classificacao, .chk-infracao, .chk-cond-condutor, .circ-placa').forEach(c => c.checked = false);
+      fotosVeiculos = { 1: [], 2: [], 3: [], 4: [] };
+      veiculos = [{ id: 1 }, { id: 2 }];
+      renderizarVeiculos();
+      vitimas = []; document.getElementById('vitimas_container').innerHTML = ''; adicionarVitima();
+      testemunhas = []; document.getElementById('testemunhas_container').innerHTML = ''; adicionarTestemunha();
+      assinaturasEnvolvidos = []; document.getElementById('assinaturas_envolvidos_container').innerHTML = '';
+      adicionarAssinaturaEnvolvido({ papel: 'Condutor V1' });
+      adicionarAssinaturaEnvolvido({ papel: 'Condutor V2' });
+      declaracoes = []; document.getElementById('declaracoes_container').innerHTML = ''; adicionarDeclaracao();
+      croquiObjetos = []; croquiTracos = []; objSelecionado = null;
+      renderizarCroquiCompleto();
+      mudarAba(1);
+    }
+
+    function carregarBoletimDoBanco(numeroBST, irAba1 = true) {
+      const b = obterBoletinsBanco().find(x => x.bst_numero === numeroBST);
+      if (!b) return;
+
+      const podeEditar = usuarioPodeEditarBoletim(b);
+      definirModoSomenteLeitura(!podeEditar);
+
+      document.getElementById('bst_numero').value = b.bst_numero;
+      document.getElementById('loc_local').value = b.loc_local || '';
+      document.getElementById('loc_ref').value = b.loc_ref || '';
+      document.getElementById('loc_bairro').value = b.loc_bairro || '';
+      document.getElementById('loc_cidade').value = b.loc_cidade || 'Casa Nova - BA';
+      document.getElementById('loc_coordenadas').value = b.loc_coordenadas || '';
+      document.getElementById('loc_data').value = b.loc_data || '';
+      document.getElementById('loc_dia').value = b.loc_dia || 'Segunda-feira';
+      document.getElementById('loc_hora_ocor').value = b.loc_hora_ocor || '';
+      document.getElementById('loc_hora_cheg').value = b.loc_hora_cheg || '';
+      document.getElementById('num_vitimas').value = b.num_vitimas || 0;
+      document.getElementById('num_feridos').value = b.num_feridos || 0;
+      document.getElementById('num_mortos').value = b.num_mortos || 0;
+
+      document.querySelectorAll('.chk-classificacao').forEach(c => c.checked = (b.classificacoes || []).includes(c.value));
+      document.querySelectorAll('.chk-infracao').forEach(c => c.checked = (b.infracoes || []).some(i => i.inf === c.dataset.inf && i.v === c.dataset.v));
+      document.querySelectorAll('.chk-cond-condutor').forEach(c => c.checked = (b.condicoes_condutores || []).some(k => k.cond === c.dataset.cond && k.v === c.dataset.v));
+      document.querySelectorAll('.circ-placa').forEach(c => c.checked = (b.circ_placas || []).includes(c.value));
+
+      fotosVeiculos = { 1: [], 2: [], 3: [], 4: [] };
+      veiculos = (b.veiculos || [{}, {}]).map((_, i) => ({ id: i + 1 }));
+      renderizarVeiculos();
+      (b.veiculos || []).forEach((v, i) => {
+        const n = i + 1;
+        fotosVeiculos[n] = v.fotos || [];
+        renderizarGaleriaFotosVeiculo(n);
+        document.getElementById(`v${n}_modelo`).value = v.modelo || '';
+        document.getElementById(`v${n}_placa`).value = v.placa || '';
+        document.getElementById(`v${n}_cor_ano`).value = v.cor_ano || '';
+        document.getElementById(`v${n}_municipio`).value = v.municipio || 'Casa Nova - BA';
+        document.getElementById(`v${n}_renavam`).value = v.renavam || '';
+        document.getElementById(`v${n}_proprietario`).value = v.proprietario || '';
+        document.getElementById(`v${n}_cpf_proprietario`).value = v.cpf_proprietario || '';
+        document.getElementById(`v${n}_condutor`).value = v.condutor || '';
+        document.getElementById(`v${n}_cpf`).value = v.cpf || '';
+        document.getElementById(`v${n}_cnh`).value = v.cnh || '';
+        document.getElementById(`v${n}_cat_cnh`).value = v.cat_cnh || '';
+        document.getElementById(`v${n}_idade_sexo`).value = v.idade_sexo || '';
+        document.getElementById(`v${n}_ocupantes`).value = v.ocupantes || '';
+        document.getElementById(`v${n}_endereco`).value = v.endereco || '';
+        document.getElementById(`v${n}_avarias_texto`).value = v.avarias_texto || '';
+      });
+
+      document.getElementById('prop_nome').value = b.prop_nome || '';
+      document.getElementById('prop_avarias').value = b.prop_avarias || '';
+      document.getElementById('prop_conhecimento').value = b.prop_conhecimento || '';
+      document.getElementById('desc_dinamica').value = b.desc_dinamica || '';
+      document.getElementById('agente_nome').value = b.agente_nome || '';
+      document.getElementById('agente_matricula').value = b.agente_matricula || '';
+      document.getElementById('agente_fone').value = b.agente_fone || '';
+
+      assinaturasEnvolvidos = [];
+      document.getElementById('assinaturas_envolvidos_container').innerHTML = '';
+      (b.assinaturas_envolvidos || []).forEach(s => adicionarAssinaturaEnvolvido(s));
+
+      croquiGabarito = b.croqui_gabarito || 'ambos';
+      croquiObjetos = b.croqui_objetos || [];
+      croquiTracos = b.croqui_tracos || [];
+      renderizarCroquiCompleto();
+      if (irAba1) mudarAba(1);
+    }
+
+    function deletarBoletimDoBanco(numeroBST) {
+      if (!usuarioLogado || usuarioLogado.role !== 'admin') return alert('Apenas o Administrador pode excluir BST!');
+      if (!confirm(`Excluir definitivamente o boletim ${numeroBST}?`)) return;
+      gravarListaBoletinsLocal(obterBoletinsBanco().filter(b => b.bst_numero !== numeroBST));
+    }
+
+    function renderizarTabelaBoletins() {
+      const lista = obterBoletinsBanco();
+      document.getElementById('contador_bst_menu').textContent = lista.length;
+      const tbody = document.getElementById('tabela_banco_bst');
+      if (!lista.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Nenhum boletim salvo até o momento.</td></tr>`;
+        return;
+      }
+      const isAdmin = usuarioLogado && usuarioLogado.role === 'admin';
+      tbody.innerHTML = lista.map(b => {
+        const ehMeu = usuarioPodeEditarBoletim(b);
+        return `
+        <tr class="hover:bg-slate-50">
+          <td class="p-2.5 font-extrabold text-green-900">${esc(b.bst_numero)}</td>
+          <td class="p-2.5">${esc(b.loc_data || '-')} ${esc(b.loc_hora_ocor || '')}</td>
+          <td class="p-2.5">${esc(b.loc_local || '-')} (${esc(b.loc_bairro || '-')})</td>
+          <td class="p-2.5">${(b.veiculos || []).map((v, i) => `V${i+1}:${esc(v.placa || '-')}`).join(' | ')}</td>
+          <td class="p-2.5">
+            <span class="font-semibold">${esc(b.autor_registro || '-')}</span>
+            ${ehMeu ? `<span class="ml-1 bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-bold">Seu Registro</span>` : `<span class="ml-1 bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded font-bold">Outro Usuário</span>`}
+          </td>
+          <td class="p-2.5 text-right space-x-1 whitespace-nowrap">
+            ${ehMeu
+              ? `<button onclick="carregarBoletimDoBanco('${esc(b.bst_numero)}', true)" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded font-bold"><i class="fa-solid fa-pen-to-square"></i> Editar</button>`
+              : `<button onclick="carregarBoletimDoBanco('${esc(b.bst_numero)}', true)" class="bg-slate-600 hover:bg-slate-500 text-white px-2.5 py-1 rounded font-bold"><i class="fa-solid fa-eye"></i> Visualizar</button>`
+            }
+            <button onclick="carregarBoletimDoBanco('${esc(b.bst_numero)}', false); gerarImpressao();" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded font-bold"><i class="fa-solid fa-print"></i> PDF / Imprimir</button>
+            <button onclick="compartilharBoletimSalvo('${esc(b.bst_numero)}', 'whatsapp')" class="bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded font-bold" title="Enviar por WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+            <button onclick="compartilharBoletimSalvo('${esc(b.bst_numero)}', 'email')" class="bg-sky-600 hover:bg-sky-500 text-white px-2 py-1 rounded font-bold" title="Enviar por E-mail"><i class="fa-solid fa-envelope"></i></button>
+            ${isAdmin ? `<button onclick="deletarBoletimDoBanco('${esc(b.bst_numero)}')" class="bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded font-bold"><i class="fa-solid fa-trash"></i></button>` : ''}
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function exportarBancoJSON() {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify({ boletins: obterBoletinsBanco() }, null, 2)], { type: 'application/json' }));
+      a.download = `backup_ebst_dmtt.json`;
+      a.click();
+    }
+
+    function importarBancoJSON(ev) {
+      const f = ev.target.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = (e) => {
+        try {
+          const j = JSON.parse(e.target.result);
+          if (Array.isArray(j.boletins)) { gravarListaBoletinsLocal(j.boletins); alert('Backup importado!'); }
+        } catch (err) { alert('JSON inválido.'); }
+      };
+      rd.readAsText(f);
+    }
+
+    // ==================== CAMPOS DINÂMICOS DO BOLETIM ====================
+    const LISTA_CLASSIFICACAO = ["Atropelamento Pedestre","Atropelamento Animal","Abalroamento Longitudinal","Abalroamento Transversal","Colisão Frontal","Colisão Traseira","Colisão c/ Veículo Parado","Engavetamento","Choque Edificação/Obstáculo","Choque Poste / Árvore","Choque Muro / Barranco","Capotamento","Tombamento","Saída de Pista","Incêndio","Outros"];
+    const LISTA_INFRACOES = ["Não dar a preferência","Avanço de semáforo","Retorno proibido","Avançar sinal de parada obrigatória","Invasão da faixa de pedestre","Veículo registrado não licenciado","Retirar veíc. do local s/ autor.","Placa ilegível","Transitar em sentido proibido","Sem licenciamento","Dirigir sob influência de álcool","Mau estado de conservação","Não socorrer a vítima","Alterar características do veículo","Não usar capacete","Não guardar distância de segurança","Defeito ou falta de equipamento","Não portar documentos","Não habilitado","Recusar-se ao teste do etilômetro","Ultrapassagem proibida","Outros"];
+    const LISTA_CONDICOES_CONDUTOR = ["Alcoolizado (Sim)","Recusa ao Etilômetro","Etilômetro Realizado","Hálito Etílico","Trôpego","Voz Anormal","Fadiga","Sono Aparente","Descontrole Emocional","Def. Físico","Normal"];
+
+    function mudarAba(num) {
+      for (let i = 1; i <= 8; i++) {
+        document.getElementById(`aba-${i}`)?.classList.toggle('hidden', i !== num);
+        document.getElementById(`tab-btn-${i}`)?.classList.toggle('active', i === num);
+      }
+      if (num === 6) setTimeout(() => renderizarCroquiCompleto(), 50);
+    }
+
+    function adicionarVeiculo() {
+      if (veiculos.length >= 4) return alert("Máximo de 4 veículos.");
+      const n = veiculos.length + 1;
+      if (!fotosVeiculos[n]) fotosVeiculos[n] = [];
+      veiculos.push({ id: n });
+      renderizarVeiculos();
+    }
+
+    function renderizarVeiculos() {
+      document.getElementById('veiculos_container').innerHTML = veiculos.map((_, i) => {
+        const n = i + 1;
+        return `
+        <div class="border-2 border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-4">
+          <div class="flex items-center justify-between border-b pb-2">
+            <span class="bg-green-800 text-white font-extrabold px-3 py-1 rounded-lg text-xs">VEÍCULO V-${n}</span>
+            <label class="text-xs font-bold text-red-700"><input type="checkbox" id="v${n}_art279" /> Veículo recolhido em conformidade com o Art. 279-A da Lei Federal 9.503/97</label>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 text-xs">
+            <div class="md:col-span-2"><label class="font-bold block mb-1">Marca / Modelo</label><input id="v${n}_modelo" type="text" class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div><label class="font-bold block mb-1">Placa</label><input id="v${n}_placa" type="text" class="w-full border rounded-lg p-2 bg-white uppercase font-bold" /></div>
+            <div><label class="font-bold block mb-1">Cor / Ano</label><input id="v${n}_cor_ano" type="text" class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div><label class="font-bold block mb-1">Município / UF</label><input id="v${n}_municipio" type="text" value="Casa Nova - BA" class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div><label class="font-bold block mb-1">RENAVAM / Chassi</label><input id="v${n}_renavam" type="text" class="w-full border rounded-lg p-2 bg-white" /></div>
+
+            <div><label class="font-bold block mb-1">Tração</label><select id="v${n}_tracao" class="w-full border rounded-lg p-2 bg-white"><option>Automotor</option><option>Elétrico</option><option>Propulsão Humana</option><option>Tração Animal</option></select></div>
+            <div><label class="font-bold block mb-1">Espécie</label><select id="v${n}_especie" class="w-full border rounded-lg p-2 bg-white"><option>Passageiro</option><option>Carga</option><option>Misto</option><option>Tração</option></select></div>
+            <div><label class="font-bold block mb-1">Tipo</label><select id="v${n}_tipo" class="w-full border rounded-lg p-2 bg-white"><option>Automóvel</option><option>Motocicleta</option><option>Caminhonete / Camioneta</option><option>Caminhão / Trator</option><option>Ônibus / Microônibus</option><option>Bicicleta / Triciclo</option></select></div>
+            <div><label class="font-bold block mb-1">Categoria</label><select id="v${n}_categoria_veic" class="w-full border rounded-lg p-2 bg-white"><option>Particular</option><option>Aluguel</option><option>Oficial</option></select></div>
+            <div><label class="font-bold block mb-1">Proprietário</label><input id="v${n}_proprietario" type="text" class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div>
+              <label class="font-bold block mb-1">CPF/CNPJ Proprietário</label>
+              <input id="v${n}_cpf_proprietario" type="text" maxlength="18" data-aceita-cnpj="true" data-rotulo="CPF/CNPJ Proprietário V-${n}" oninput="aplicarMascaraEValidarCPF(this, true)" placeholder="000.000.000-00" class="input-cpf-validado w-full border rounded-lg p-2 bg-white font-mono" />
+              <span class="msg-validacao-cpf"></span>
+            </div>
+
+            <div class="md:col-span-2"><label class="font-bold block mb-1">Nome do Condutor</label><input id="v${n}_condutor" type="text" class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div>
+              <label class="font-bold block mb-1">CPF do Condutor</label>
+              <input id="v${n}_cpf" type="text" maxlength="14" data-aceita-cnpj="false" data-rotulo="CPF Condutor V-${n}" oninput="aplicarMascaraEValidarCPF(this, false)" placeholder="000.000.000-00" class="input-cpf-validado w-full border rounded-lg p-2 bg-white font-mono" />
+              <span class="msg-validacao-cpf"></span>
+            </div>
+            <div>
+              <label class="font-bold block mb-1">Nº Registro CNH (11 dígitos)</label>
+              <input id="v${n}_cnh" type="text" maxlength="11" data-rotulo="CNH do Condutor V-${n}" oninput="aplicarMascaraEValidarCNH(this)" placeholder="00000000000" class="input-cnh-validado w-full border rounded-lg p-2 bg-white font-mono" />
+              <span class="msg-validacao-cnh"></span>
+            </div>
+            <div><label class="font-bold block mb-1">Cat. CNH / UF</label><input id="v${n}_cat_cnh" type="text" placeholder="Ex: AB / BA" class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div><label class="font-bold block mb-1">Idade / Sexo</label><input id="v${n}_idade_sexo" type="text" placeholder="Ex: 35a / M" class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div class="md:col-span-2"><label class="font-bold block mb-1">Ocupantes / Feridos / Mortos</label><input id="v${n}_ocupantes" type="text" placeholder="Ocup: 1 | Fer: 0 | Mor: 0" class="w-full border rounded-lg p-2 bg-white" /></div>
+            <div class="md:col-span-4"><label class="font-bold block mb-1">Endereço do Condutor</label><input id="v${n}_endereco" type="text" class="w-full border rounded-lg p-2 bg-white" /></div>
+          </div>
+
+          <div class="bg-white border rounded-xl p-3 space-y-3">
+            <div class="flex flex-col md:flex-row items-center gap-4">
+              <svg width="190" height="80" viewBox="0 0 200 90" class="border rounded bg-slate-50 shrink-0">
+                <rect onclick="alternarAvaria(${n}, 'Frente', this)" x="10" y="20" width="35" height="50" rx="5" fill="#e2e8f0" stroke="#475569" stroke-width="2" class="vehicle-part"/><text x="27" y="48" font-size="8" text-anchor="middle" font-weight="bold">FRENTE</text>
+                <rect onclick="alternarAvaria(${n}, 'Lat. Esq.', this)" x="48" y="8" width="100" height="18" rx="4" fill="#e2e8f0" stroke="#475569" stroke-width="2" class="vehicle-part"/><text x="98" y="20" font-size="8" text-anchor="middle" font-weight="bold">LAT. ESQ.</text>
+                <rect onclick="alternarAvaria(${n}, 'Teto', this)" x="48" y="29" width="100" height="32" rx="4" fill="#e2e8f0" stroke="#475569" stroke-width="2" class="vehicle-part"/><text x="98" y="48" font-size="8" text-anchor="middle" font-weight="bold">TETO</text>
+                <rect onclick="alternarAvaria(${n}, 'Lat. Dir.', this)" x="48" y="64" width="100" height="18" rx="4" fill="#e2e8f0" stroke="#475569" stroke-width="2" class="vehicle-part"/><text x="98" y="76" font-size="8" text-anchor="middle" font-weight="bold">LAT. DIR.</text>
+                <rect onclick="alternarAvaria(${n}, 'Traseira', this)" x="151" y="20" width="38" height="50" rx="5" fill="#e2e8f0" stroke="#475569" stroke-width="2" class="vehicle-part"/><text x="170" y="48" font-size="8" text-anchor="middle" font-weight="bold">TRASEIRA</text>
+              </svg>
+              <div class="flex-1 w-full text-xs">
+                <label class="font-bold block mb-1">Avarias de V-${n} (Página 6)</label>
+                <input id="v${n}_avarias_texto" type="text" placeholder="Clique nas partes do veículo ou digite as avarias..." class="w-full border rounded-lg p-2" />
+              </div>
+            </div>
+            <div class="border-t pt-2.5 flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-extrabold text-green-900"><i class="fa-solid fa-camera"></i> Fotos do Veículo V-${n} e Avarias</span>
+              <label class="bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                <i class="fa-solid fa-camera-retro"></i> Tirar Foto / Anexar Imagens
+                <input type="file" accept="image/*" capture="environment" multiple class="hidden" onchange="processarFotosVeiculo(${n}, this)" />
+              </label>
+            </div>
+            <div id="v${n}_galeria_fotos" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>`;
+      }).join('');
+      veiculos.forEach((_, i) => renderizarGaleriaFotosVeiculo(i + 1));
+    }
+
+    function alternarAvaria(n, parte, el) {
+      el.classList.toggle('damaged');
+      const inp = document.getElementById(`v${n}_avarias_texto`);
+      let arr = inp.value ? inp.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+      arr = arr.includes(parte) ? arr.filter(p => p !== parte) : [...arr, parte];
+      inp.value = arr.join(', ');
+    }
+
+    function adicionarVitima() {
+      const idx = vitimas.length + 1; vitimas.push({ id: idx });
+      const div = document.createElement('div');
+      div.className = "border rounded-xl p-3 bg-red-50/30 grid grid-cols-1 md:grid-cols-6 gap-3 text-xs";
+      div.innerHTML = `
+        <div class="md:col-span-2"><label class="font-bold block mb-1">${idx}) Nome da Vítima</label><input type="text" class="vit-nome w-full border rounded-lg p-2 bg-white" /></div>
+        <div>
+          <label class="font-bold block mb-1">CPF da Vítima</label>
+          <input type="text" maxlength="14" data-aceita-cnpj="false" data-rotulo="CPF Vítima #${idx}" oninput="aplicarMascaraEValidarCPF(this, false)" class="vit-cpf input-cpf-validado w-full border rounded-lg p-2 bg-white font-mono" />
+          <span class="msg-validacao-cpf"></span>
+        </div>
+        <div><label class="font-bold block mb-1">Idade / Sexo</label><input type="text" class="vit-idade w-full border rounded-lg p-2 bg-white" /></div>
+        <div><label class="font-bold block mb-1">Ferimentos</label><select class="vit-ferimento w-full border rounded-lg p-2 bg-white"><option>Leves</option><option>Grave</option><option>Gravíssimo</option><option>Letais (NIC)</option></select></div>
+        <div><label class="font-bold block mb-1">Posição</label><select class="vit-posicao w-full border rounded-lg p-2 bg-white"><option>Condutor V1</option><option>Condutor V2</option><option>Passageiro V1</option><option>Passageiro V2</option><option>Pedestre</option></select></div>
+        <div class="md:col-span-3"><label class="font-bold block mb-1">Endereço da Vítima</label><input type="text" class="vit-end w-full border rounded-lg p-2 bg-white" /></div>
+        <div class="md:col-span-3"><label class="font-bold block mb-1">Socorrido por / Unidade Hospitalar</label><input type="text" class="vit-hospital w-full border rounded-lg p-2 bg-white" /></div>`;
+      document.getElementById('vitimas_container').appendChild(div);
+    }
+
+    function adicionarTestemunha() {
+      const idx = testemunhas.length + 1; testemunhas.push({ id: idx });
+      const div = document.createElement('div');
+      div.className = "border rounded-xl p-3 bg-slate-50 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs";
+      div.innerHTML = `
+        <div><label class="font-bold block mb-1">Nome da Testemunha ${idx}</label><input type="text" class="test-nome w-full border rounded-lg p-2 bg-white" /></div>
+        <div><label class="font-bold block mb-1">RG / Telefone</label><input type="text" class="test-doc w-full border rounded-lg p-2 bg-white" /></div>
+        <div><label class="font-bold block mb-1">Endereço</label><input type="text" class="test-end w-full border rounded-lg p-2 bg-white" /></div>`;
+      document.getElementById('testemunhas_container').appendChild(div);
+    }
+
+    function adicionarDeclaracao() {
+      const idU = Date.now() + Math.floor(Math.random() * 1000);
+      const idTxt = `decl_txt_${idU}`, idBtn = `decl_btn_${idU}`, idSt = `decl_st_${idU}`, idSig = `decl_sig_${idU}`;
+      declaracoes.push({ id: idU, canvasId: idSig });
+      const div = document.createElement('div');
+      div.id = `card_decl_${idU}`;
+      div.className = "border-2 rounded-xl p-4 bg-slate-50 space-y-2.5 text-xs";
+      div.innerHTML = `
+        <div class="flex justify-between items-center border-b pb-1.5">
+          <span class="font-extrabold text-green-900 uppercase">Declaração do Condutor (Pág. 7/8)</span>
+          <button type="button" id="${idBtn}" onclick="alternarReconhecimentoVoz('${idTxt}', '${idBtn}', '${idSt}')" class="bg-red-600 text-white font-bold px-3 py-1 rounded-lg"><i class="fa-solid fa-microphone"></i> <span>Narrar por Voz</span></button>
+        </div>
+        <div id="${idSt}" class="hidden bg-red-50 text-red-800 p-1.5 rounded font-semibold">Gravando voz...</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <input type="text" placeholder="Nome Completo do Condutor" class="decl-nome md:col-span-2 border rounded-lg p-2 bg-white" />
+          <input type="text" placeholder="Placa do Veículo" class="decl-placa border rounded-lg p-2 bg-white" />
+          <textarea id="${idTxt}" rows="2" placeholder="Relato do condutor..." class="decl-relato md:col-span-3 border rounded-lg p-2 bg-white"></textarea>
+          <div class="md:col-span-3">
+            <div class="flex justify-between mb-1"><span class="font-bold">Assinatura do Condutor (Com o dedo na tela):</span><button type="button" onclick="limparCanvasAssinatura('${idSig}')" class="bg-slate-200 px-2 py-0.5 rounded font-bold">Limpar</button></div>
+            <div class="border-2 border-dashed border-slate-400 rounded-lg bg-white overflow-hidden"><canvas id="${idSig}" width="550" height="110" class="sig-canvas w-full h-[100px]"></canvas></div>
+          </div>
+        </div>`;
+      document.getElementById('declaracoes_container').appendChild(div);
+      setTimeout(() => ativarCanvasAssinatura(idSig), 40);
+    }
+
+    // ==================== VOZ, EXEMPLO E IMPRESSÃO COMPLETA (TODOS OS DADOS + CROQUI) ====================
+    let recVoz = null;
+    function alternarReconhecimentoVoz(txtId, btnId, stId) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return alert("Use Google Chrome ou Edge para narração por voz.");
+      if (recVoz) { recVoz.stop(); return; }
+      const r = new SR(); r.lang = 'pt-BR'; r.continuous = true;
+      const btn = document.getElementById(btnId), st = document.getElementById(stId), tx = document.getElementById(txtId);
+      r.onstart = () => { recVoz = r; btn.classList.add('pulse-mic'); st.classList.remove('hidden'); };
+      r.onresult = (ev) => {
+        let t = '';
+        for (let i = ev.resultIndex; i < ev.results.length; ++i) if (ev.results[i].isFinal) t += ev.results[i][0].transcript + ' ';
+        if (t) tx.value = (tx.value ? tx.value.trim() + ' ' : '') + t.trim() + '. ';
+      };
+      r.onend = () => { recVoz = null; btn.classList.remove('pulse-mic'); st.classList.add('hidden'); };
+      r.start();
+    }
+
+    function gerarRelatoAutomatico() {
+      const loc = document.getElementById('loc_local').value || 'via pública';
+      const coords = document.getElementById('loc_coordenadas').value;
+      document.getElementById('desc_dinamica').value = `A guarnição do Departamento Municipal de Trânsito de Casa Nova-BA (DMTT) compareceu em ${loc}${coords ? ` (GPS: ${coords})` : ''} para atendimento de sinistro de trânsito, realizando o registro técnico, levantamento de avarias e coleta de assinaturas.`;
+    }
+
+    function carregarExemplo() {
+      definirModoSomenteLeitura(false);
+      document.getElementById('loc_local').value = "Avenida Governador Roberto Santos";
+      document.getElementById('loc_bairro').value = "Centro";
+      document.getElementById('loc_coordenadas').value = "-9.163320, -40.972410";
+      document.getElementById('loc_ref').value = "Próximo à Praça Principal";
+      document.getElementById('loc_hora_ocor').value = "14:20";
+      document.getElementById('loc_hora_cheg').value = "14:28";
+      document.getElementById('num_vitimas').value = "1";
+      document.getElementById('num_feridos').value = "1";
+      document.querySelectorAll('.chk-classificacao')[3].checked = true;
+      document.getElementById('v1_modelo').value = "VW Gol 1.6";
+      document.getElementById('v1_placa').value = "PLX-4A89";
+      document.getElementById('v1_cor_ano').value = "Branca / 2021";
+      document.getElementById('v1_proprietario').value = "Carlos Eduardo Ferreira";
+      document.getElementById('v1_cpf_proprietario').value = "529.982.247-25";
+      aplicarMascaraEValidarCPF(document.getElementById('v1_cpf_proprietario'), true);
+      document.getElementById('v1_condutor').value = "Carlos Eduardo Ferreira";
+      document.getElementById('v1_cpf').value = "529.982.247-25";
+      aplicarMascaraEValidarCPF(document.getElementById('v1_cpf'), false);
+      document.getElementById('v1_cnh').value = "04722266191";
+      aplicarMascaraEValidarCNH(document.getElementById('v1_cnh'));
+      document.getElementById('v1_cat_cnh').value = "AB / BA";
+      document.getElementById('v1_avarias_texto').value = "Frente, Para-choque dianteiro";
+      croquiObjetos = [
+        { id: 1, tipo: 'auto_antes', rotulo: 'V1', x: 220, y: 225, angulo: 0 },
+        { id: 2, tipo: 'motocicleta', rotulo: 'V2', x: 310, y: 145, angulo: 90 },
+        { id: 3, tipo: 'ponto_impacto', rotulo: '', x: 310, y: 225, angulo: 0 }
+      ];
+      renderizarCroquiCompleto();
+      gerarRelatoAutomatico();
+    }
+
+    // 6. IMPRESSÃO COMPLETA DE TODOS OS CAMPOS DO E-BST (SEÇÕES I A XIII + CROQUI GARANTIDO)
+    function gerarImpressao() {
+      const b = coletarObjetoBoletimAtual();
+      const logo = document.getElementById('img_logo_topo').src;
+
+      const veicsHtml = (b.veiculos || []).map((v, i) => {
+        const n = i + 1;
+        const fHtml = (v.fotos || []).map((f, idx) => `<div style="border:1px solid #94a3b8;padding:2px;text-align:center;"><img src="${f.dataUrl}" style="width:115px;height:78px;object-fit:cover;display:block;"/><span style="font-size:8px;font-weight:bold;">V-${n} Foto #${idx+1}</span></div>`).join('');
+        return `<div style="border:1px solid #000;padding:5px;margin-bottom:5px;font-size:10px;">
+          <div style="background:#f1f5f9;font-weight:800;padding:2px 4px;margin-bottom:3px;border-bottom:1px solid #cbd5e1;">
+            VEÍCULO V-${n} — ${esc(v.modelo || '-')} | Placa: ${esc(v.placa || '-')} | Cor/Ano: ${esc(v.cor_ano || '-')} | ${v.art279 ? 'RECOLHIDO ART. 279-A CTB' : 'Liberado/Local'}
+          </div>
+          <strong>Município/UF:</strong> ${esc(v.municipio)} | <strong>RENAVAM/Chassi:</strong> ${esc(v.renavam || '-')} | <strong>Tração/Espécie/Tipo/Cat.:</strong> ${esc(v.tracao)} / ${esc(v.especie)} / ${esc(v.tipo)} / ${esc(v.categoria_veic)}<br/>
+          <strong>Proprietário:</strong> ${esc(v.proprietario || '-')} (CPF/CNPJ: ${esc(v.cpf_proprietario || '-')})<br/>
+          <strong>Condutor:</strong> ${esc(v.condutor || '-')} | <strong>CPF:</strong> ${esc(v.cpf || '-')} | <strong>CNH:</strong> ${esc(v.cnh || '-')} (${esc(v.cat_cnh || '-')}) | <strong>Idade/Sexo:</strong> ${esc(v.idade_sexo || '-')} | <strong>Ocupantes:</strong> ${esc(v.ocupantes || '-')}<br/>
+          <strong>Endereço Condutor:</strong> ${esc(v.endereco || '-')} | <strong>Avarias (Pág. 6):</strong> ${esc(v.avarias_texto || 'Sem avarias registradas')}
+          ${fHtml ? `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;">${fHtml}</div>` : ''}
+        </div>`;
+      }).join('');
+
+      const vitimasHtml = (b.vitimas || []).length
+        ? `<table class="print-table"><thead><tr><th>#</th><th>Nome da Vítima</th><th>CPF</th><th>Idade/Sexo</th><th>Ferimentos</th><th>Posição</th><th>Unid. Hospitalar / Endereço</th></tr></thead><tbody>` +
+          b.vitimas.map((vt, idx) => `<tr><td>${idx+1}</td><td>${esc(vt.nome)}</td><td>${esc(vt.cpf)}</td><td>${esc(vt.idade)}</td><td><strong>${esc(vt.ferimento)}</strong></td><td>${esc(vt.posicao)}</td><td>${esc(vt.hospital)} (${esc(vt.endereco)})</td></tr>`).join('') +
+          `</tbody></table>`
+        : `<p style="margin:2px 0;">Sem vítimas cadastradas.</p>`;
+
+      const testHtml = (b.testemunhas || []).length
+        ? `<table class="print-table"><thead><tr><th>Nome da Testemunha</th><th>RG / Telefone</th><th>Endereço</th></tr></thead><tbody>` +
+          b.testemunhas.map(t => `<tr><td>${esc(t.nome)}</td><td>${esc(t.doc)}</td><td>${esc(t.endereco)}</td></tr>`).join('') +
+          `</tbody></table>`
+        : `<p style="margin:2px 0;">Sem testemunhas cadastradas.</p>`;
+
+      const sigsHtml = (b.assinaturas_envolvidos || []).map(s => `
+        <div style="border:1px solid #000;padding:4px;text-align:center;">
+          <img src="${s.dataUrl}" style="height:55px;max-width:100%;object-fit:contain;margin:0 auto;display:block;" />
+          <div style="border-top:1px solid #000;font-size:9.5px;margin-top:2px;"><strong>${esc(s.nome || 'Envolvido')}</strong> (${esc(s.papel)})</div>
+        </div>`).join('');
+
+      const declHtml = (b.declaracoes || []).length
+        ? `<div class="print-sec-title">PÁGINAS 7 e 8 - DECLARAÇÕES DOS CONDUTORES</div>` +
+          b.declaracoes.map((d, i) => `
+            <div style="border:1px solid #000;padding:5px;margin-bottom:5px;font-size:10px;">
+              <strong>Declaração #${i+1} - Condutor:</strong> ${esc(d.nome)} | <strong>Placa:</strong> ${esc(d.placa)}<br/>
+              <strong>Relato:</strong> ${esc(d.relato)}
+              ${d.sigDataUrl ? `<div style="text-align:center;margin-top:4px;"><img src="${d.sigDataUrl}" style="height:45px;margin:0 auto;display:block;"/><span style="font-size:8.5px;">Assinatura do Condutor Declarante</span></div>` : ''}
+            </div>`).join('')
+        : '';
+
+      document.getElementById('print_area').innerHTML = `
+        <div style="border:2px solid #000;padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <img src="${logo}" style="width:62px;height:62px;object-fit:contain;" />
+              <div>
+                <h1 style="font-size:14px;font-weight:800;margin:0;">DEPARTAMENTO MUNICIPAL DE TRÂNSITO DE CASA NOVA-BA (DMTT)</h1>
+                <p style="margin:0;font-size:10px;">Prefeitura Municipal de Casa Nova - Bahia | BOLETIM DE SINISTRO DE TRÂNSITO (BST)</p>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <strong style="font-size:13px;">${esc(b.bst_numero)}</strong><br/>
+              <span style="font-size:9px;">Autor: ${esc(b.autor_registro)}</span>
+            </div>
+          </div>
+
+          <div class="print-sec-title">I - LOCALIZAÇÃO DO SINISTRO</div>
+          <table class="print-table">
+            <tr>
+              <td colspan="2"><strong>Local/Via:</strong> ${esc(b.loc_local)}</td>
+              <td><strong>Ponto Ref.:</strong> ${esc(b.loc_ref)}</td>
+              <td><strong>Bairro:</strong> ${esc(b.loc_bairro)}</td>
+            </tr>
+            <tr>
+              <td><strong>Cidade/UF:</strong> ${esc(b.loc_cidade)}</td>
+              <td><strong>GPS (Lat/Lng):</strong> ${esc(b.loc_coordenadas || '-')}</td>
+              <td><strong>Data/Dia:</strong> ${esc(b.loc_data)} (${esc(b.loc_dia)})</td>
+              <td><strong>Hora Ocorr.:</strong> ${esc(b.loc_hora_ocor)} | <strong>Chegada:</strong> ${esc(b.loc_hora_cheg)}</td>
+            </tr>
+          </table>
+
+          <div class="print-sec-title">II, III e IV - CLASSIFICAÇÃO, CIRCUNSTÂNCIAS E INFRAÇÕES AUTUADAS</div>
+          <table class="print-table">
+            <tr>
+              <td colspan="3"><strong>Classificação:</strong> ${esc((b.classificacoes || []).join(', ') || 'Não informada')}</td>
+              <td><strong>Vítimas:</strong> ${esc(b.num_vitimas)} | <strong>Feridos:</strong> ${esc(b.num_feridos)} | <strong>Mortos:</strong> ${esc(b.num_mortos)}</td>
+            </tr>
+            <tr>
+              <td><strong>Local/Via:</strong> ${esc(b.circ_local)} (${esc(b.circ_sentido)} / ${esc(b.circ_area)})</td>
+              <td><strong>Sinalização:</strong> ${esc(b.circ_sinalizacao)} | <strong>Semáforo:</strong> ${esc(b.circ_semaforo)}</td>
+              <td><strong>Período/Clima:</strong> ${esc(b.circ_periodo)} / ${esc(b.circ_clima)}</td>
+              <td><strong>Pista/Pavimento:</strong> ${esc(b.circ_pista)} / ${esc(b.circ_pavimentacao)} (${esc(b.circ_divisao)})</td>
+            </tr>
+            <tr>
+              <td colspan="2"><strong>Condições Gerais / Placas:</strong> ${esc(b.circ_cond_gerais)} | ${esc((b.circ_placas || []).join(', ') || 'Nenhuma')}</td>
+              <td colspan="2"><strong>Infrações Autuadas (IV):</strong> ${esc((b.infracoes || []).map(i => `${i.inf} (${i.v})`).join('; ') || 'Nenhuma')}</td>
+            </tr>
+          </table>
+
+          <div class="print-sec-title">V e VI - VEÍCULOS ENVOLVIDOS, CONDUTORES, AVARIAS, FOTOS E OUTRAS PROPRIEDADES</div>
+          ${veicsHtml}
+          <table class="print-table">
+            <tr>
+              <td><strong>VI - Outras Propriedades Atingidas:</strong> ${esc(b.prop_nome || 'Nenhuma')}</td>
+              <td><strong>Natureza das Avarias:</strong> ${esc(b.prop_avarias || '-')}</td>
+              <td><strong>Tomou Conhecimento:</strong> ${esc(b.prop_conhecimento || '-')}</td>
+            </tr>
+          </table>
+
+          <div class="print-sec-title">VIII, IX e X - CONDIÇÕES DOS CONDUTORES, VELOCIDADE/FRENAGEM E PROVIDÊNCIAS</div>
+          <table class="print-table">
+            <tr>
+              <td colspan="3"><strong>VIII - Condições dos Condutores:</strong> ${esc((b.condicoes_condutores || []).map(c => `${c.cond} (${c.v})`).join('; ') || 'Normal')}</td>
+            </tr>
+            <tr>
+              <td><strong>IX - Frenagem (m):</strong> V1(DD:${esc(b.frenagem?.dd?.v1||'-')}, DE:${esc(b.frenagem?.de?.v1||'-')}, TD:${esc(b.frenagem?.td?.v1||'-')}, TE:${esc(b.frenagem?.te?.v1||'-')}) | V2(DD:${esc(b.frenagem?.dd?.v2||'-')}, DE:${esc(b.frenagem?.de?.v2||'-')})</td>
+              <td><strong>Pós-Embate:</strong> ${esc(b.vel_dist_embate || '-')} | <strong>Visibilidade:</strong> ${esc(b.vel_dist_visib || '-')}</td>
+              <td><strong>Vel. Máx. Via:</strong> ${esc(b.vel_max_via || '-')}</td>
+            </tr>
+            <tr>
+              <td><strong>X - Comunicado a:</strong> ${esc((b.prov_comunicado || []).join(', ') || '-')}</td>
+              <td><strong>Recebedor:</strong> ${esc(b.prov_recebedor || '-')} | <strong>Reboque:</strong> ${esc((b.prov_reboque || []).join(', ') || '-')}</td>
+              <td><strong>Equipe no Local:</strong> ${esc(b.prov_equipe_nome || '-')} (Mat: ${esc(b.prov_equipe_mat || '-')})</td>
+            </tr>
+          </table>
+
+          <div class="print-sec-title">XI e VII - VÍTIMAS E TESTEMUNHAS</div>
+          ${vitimasHtml}
+          ${testHtml}
+
+          <div class="print-sec-title">XII - DESCRIÇÃO DA DINÂMICA DO SINISTRO E ASSINATURA DOS ENVOLVIDOS</div>
+          <p style="border:1px solid #000;padding:5px;min-height:38px;margin:0 0 5px 0;font-size:10px;">${esc(b.desc_dinamica)}</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:5px;">${sigsHtml}</div>
+
+          ${declHtml}
+
+          <div class="print-sec-title">PÁGINA 5 - CROQUI DO SINISTRO</div>
+          <div style="border:1px solid #000;padding:4px;text-align:center;background:#fff;">
+            <img id="print_croqui_img" src="${b.croqui_data_url}" style="width:100%;max-height:230px;object-fit:contain;display:block;margin:0 auto;" />
+          </div>
+
+          <div style="margin-top:8px;padding-top:6px;border-top:2px solid #000;display:flex;justify-content:space-between;font-size:10.5px;">
+            <span><strong>XIII - Agente de Trânsito (DMTT Casa Nova-BA):</strong> ${esc(b.agente_nome)}</span>
+            <span><strong>Matrícula:</strong> ${esc(b.agente_matricula)} | <strong>Fone:</strong> ${esc(b.agente_fone)}</span>
+            <span><strong>Assinatura:</strong> _______________________________</span>
+          </div>
+        </div>`;
+
+      const imgP = document.getElementById('print_croqui_img');
+      let impresso = false;
+      const acionarPrint = () => {
+        if (impresso) return;
+        impresso = true;
+        setTimeout(() => window.print(), 150);
+      };
+      if (imgP && !imgP.complete) {
+        imgP.onload = acionarPrint;
+        imgP.onerror = acionarPrint;
+        setTimeout(acionarPrint, 450);
+      } else {
+        acionarPrint();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      obterUsuariosBanco();
+      document.getElementById('loc_data').valueAsDate = new Date();
+      document.getElementById('classificacao_container').innerHTML = LISTA_CLASSIFICACAO.map(item => `<label class="flex items-center gap-1.5 p-1.5 border rounded"><input type="checkbox" value="${item}" class="chk-classificacao"/> <span>${item}</span></label>`).join('');
+      document.getElementById('infracoes_container').innerHTML = LISTA_INFRACOES.map(inf => `<div class="flex justify-between border rounded px-2 py-1 bg-slate-50"><span>${inf}</span><div class="flex gap-1">${[1,2,3,4].map(v => `<label class="text-[10px] font-bold"><input type="checkbox" data-inf="${inf}" data-v="V${v}" class="chk-infracao"/>${v}</label>`).join('')}</div></div>`).join('');
+      document.getElementById('condicoes_condutores_tbody').innerHTML = LISTA_CONDICOES_CONDUTOR.map(c => `<tr><td class="p-1.5 font-semibold">${c}</td>${[1,2,3,4].map(v => `<td class="text-center"><input type="checkbox" data-cond="${c}" data-v="V${v}" class="chk-cond-condutor"/></td>`).join('')}</tr>`).join('');
+      adicionarVeiculo();
+      adicionarVeiculo();
+      adicionarVitima();
+      adicionarTestemunha();
+      adicionarAssinaturaEnvolvido({ papel: 'Condutor V1' });
+      adicionarAssinaturaEnvolvido({ papel: 'Condutor V2' });
+      adicionarDeclaracao();
+      inicializarCanvasCroqui();
+    });
+  </script>
+</body>
+</html>
