@@ -37,6 +37,7 @@
       .no-print { display: none !important; }
       .print-only { display: block !important; }
       .quebra-pagina { page-break-before: always; }
+      .evitar-quebra { page-break-inside: avoid; break-inside: avoid; }
     }
   </style>
 </head>
@@ -169,7 +170,7 @@
     </header>
 
     <main class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1">
-      <!-- ==================== ABA 1: LOCALIZAÇÃO COM MÓDULO GPS CORRIGIDO ==================== -->
+      <!-- ==================== ABA 1: LOCALIZAÇÃO COM MÓDULO GPS ==================== -->
       <section id="aba-1" class="space-y-6">
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3 mb-4">
@@ -381,7 +382,7 @@
           <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3 mb-4">
             <div>
               <h2 class="text-sm font-extrabold uppercase text-green-900 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">XII</span> Descrição da Dinâmica do Sinistro (Com Narração por Voz)</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Narre os fatos pelo microfone e colete abaixo a assinatura dos envolvidos diretamente com o dedo na tela.</p>
+              <p class="text-xs text-slate-500 mt-0.5">Narre os fatos pelo microfone e colete abaixo a assinatura dos envolvidos diretamente com o dedo na tela (V1 a V4, Testemunhas e Vítimas).</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
               <button type="button" id="btn_voz_dinamica" onclick="alternarReconhecimentoVoz('desc_dinamica', 'btn_voz_dinamica', 'status_voz_dinamica')" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow">
@@ -403,7 +404,7 @@
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div>
                 <h3 class="text-xs font-extrabold uppercase text-green-900 flex items-center gap-2">
-                  <i class="fa-solid fa-signature text-green-700 text-sm"></i> Assinatura dos Envolvidos (Com o dedo na tela ou mouse)
+                  <i class="fa-solid fa-signature text-green-700 text-sm"></i> Assinatura dos Envolvidos (V1, V2, V3, V4, Testemunha ou Vítima)
                 </h3>
                 <p class="text-[11px] text-slate-500">Assine diretamente dentro da caixa tracejada abaixo.</p>
               </div>
@@ -424,7 +425,7 @@
         </div>
       </section>
 
-      <!-- ==================== ABA 6: CROQUI INTERATIVO ==================== -->
+      <!-- ==================== ABA 6: CROQUI INTERATIVO E AGENTE ==================== -->
       <section id="aba-6" class="space-y-6 hidden">
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3 mb-4">
@@ -487,11 +488,20 @@
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-4 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">XIII</span> Identificação do Agente de Trânsito - DMTT Casa Nova-BA</h2>
+          <h2 class="text-sm font-extrabold uppercase text-green-900 border-b pb-2 mb-4 flex items-center gap-2"><span class="bg-green-800 text-white px-2 py-0.5 rounded text-xs">XIII</span> Identificação e Assinatura do Agente de Trânsito - DMTT Casa Nova-BA</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div><label class="font-bold text-slate-600 block mb-1">Nome Completo do Agente</label><input id="agente_nome" type="text" class="w-full border rounded-lg p-2.5" /></div>
             <div><label class="font-bold text-slate-600 block mb-1">Matrícula Funcional</label><input id="agente_matricula" type="text" class="w-full border rounded-lg p-2.5" /></div>
             <div><label class="font-bold text-slate-600 block mb-1">Telefone Funcional</label><input id="agente_fone" type="text" class="w-full border rounded-lg p-2.5" /></div>
+          </div>
+          <div class="mt-4 pt-3 border-t text-xs">
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-extrabold text-green-900 uppercase"><i class="fa-solid fa-signature"></i> Assinatura Digital do Agente Responsável (Opcional - sai no rodapé da impressão):</label>
+              <button type="button" onclick="limparCanvasAssinatura('sig_agente_canvas')" class="bg-slate-200 hover:bg-slate-300 px-2.5 py-1 rounded font-bold text-[11px]">Limpar Assinatura do Agente</button>
+            </div>
+            <div class="border-2 border-dashed border-slate-400 rounded-lg bg-white overflow-hidden max-w-md">
+              <canvas id="sig_agente_canvas" width="440" height="110" class="sig-canvas w-full h-[100px]"></canvas>
+            </div>
           </div>
         </div>
       </section>
@@ -721,7 +731,7 @@
     }
 
     // ============================================================================
-    // 2. CAPTURA DE ENDEREÇO POR GPS CORRIGIDA (MULTI-API: BIGDATACLOUD + NOMINATIM)
+    // 2. CAPTURA DE ENDEREÇO POR GPS (MULTI-API: BIGDATACLOUD + NOMINATIM)
     // ============================================================================
     function exibirStatusGPS(tipo, htmlMsg) {
       const box = document.getElementById('status_gps_box');
@@ -737,7 +747,6 @@
     async function buscarEnderecoPorCoordenadasMultiAPI(lat, lng) {
       let logradouro = '', numero = '', bairro = '', cidade = '', uf = 'BA', referencia = '';
 
-      // Tentativa 1: OpenStreetMap Nominatim (Traz nome exato da rua e número)
       try {
         const r1 = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=pt-BR`);
         if (r1.ok) {
@@ -752,7 +761,6 @@
         }
       } catch (e) {}
 
-      // Tentativa 2: BigDataCloud Reverse Geocoding (Funciona mesmo em file:// sem bloqueio de CORS)
       if (!logradouro || !bairro || !cidade) {
         try {
           const r2 = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=pt`);
@@ -770,7 +778,6 @@
         } catch (e) {}
       }
 
-      // Tentativa 3: Photon Komoot (Base OpenStreetMap alternativa sem restrição de User-Agent)
       if (!logradouro || logradouro.startsWith('Via urbana')) {
         try {
           const r3 = await fetch(`https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`);
@@ -1047,31 +1054,64 @@
         const r = sc.getBoundingClientRect();
         const cx = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
         const cy = e.touches && e.touches.length ? e.touches[0].clientY : e.clientY;
-        return { x: (cx - r.left) * (sc.width / (r.width || sc.width)), y: (cy - r.top) * (sc.height / (r.height || sc.height)) };
+        const escalaX = r.width ? (sc.width / r.width) : 1;
+        const escalaY = r.height ? (sc.height / r.height) : 1;
+        return { x: (cx - r.left) * escalaX, y: (cy - r.top) * escalaY };
       };
-      const ini = (e) => { e.preventDefault(); desenhandoSig = true; const p = pos(e); sctx.beginPath(); sctx.moveTo(p.x, p.y); };
+      const ini = (e) => {
+        e.preventDefault();
+        desenhandoSig = true;
+        sc.dataset.assinado = 'true';
+        delete sc.dataset.savedUrl;
+        const p = pos(e);
+        sctx.beginPath();
+        sctx.moveTo(p.x, p.y);
+      };
       const mov = (e) => {
         if (!desenhandoSig) return;
         e.preventDefault();
-        const p = pos(e); sctx.lineTo(p.x, p.y); sctx.strokeStyle = '#0f172a'; sctx.lineWidth = 2.4; sctx.lineCap = 'round'; sctx.stroke();
+        const p = pos(e);
+        sctx.lineTo(p.x, p.y);
+        sctx.strokeStyle = '#0f172a';
+        sctx.lineWidth = 2.4;
+        sctx.lineCap = 'round';
+        sctx.stroke();
       };
-      const fim = () => { desenhandoSig = false; };
+      const fim = () => {
+        if (desenhandoSig) {
+          desenhandoSig = false;
+          try { sc.dataset.savedUrl = sc.toDataURL('image/png'); } catch (err) {}
+        }
+      };
       sc.addEventListener('mousedown', ini); sc.addEventListener('mousemove', mov); window.addEventListener('mouseup', fim);
       sc.addEventListener('touchstart', ini, { passive: false }); sc.addEventListener('touchmove', mov, { passive: false }); sc.addEventListener('touchend', fim);
     }
 
     function limparCanvasAssinatura(canvasId) {
       const sc = document.getElementById(canvasId);
-      if (sc) sc.getContext('2d').clearRect(0, 0, sc.width, sc.height);
+      if (sc) {
+        sc.getContext('2d').clearRect(0, 0, sc.width, sc.height);
+        delete sc.dataset.assinado;
+        delete sc.dataset.savedUrl;
+      }
     }
 
+    function obterDataUrlAssinatura(canvasId) {
+      const sc = document.getElementById(canvasId);
+      if (!sc) return '';
+      if (sc.dataset.savedUrl) return sc.dataset.savedUrl;
+      try { return sc.toDataURL('image/png'); } catch (e) { return ''; }
+    }
+
+    // CORREÇÃO 2: Adicionado "Condutor V4" na lista de assinaturas e preservada a imagem instantaneamente no dataset
     function adicionarAssinaturaEnvolvido(dados = null) {
-      const idUnico = Date.now() + Math.floor(Math.random() * 1000);
+      const idUnico = Date.now() + Math.floor(Math.random() * 10000);
       const canvasId = `sig_env_${idUnico}`;
       assinaturasEnvolvidos.push({ id: idUnico, canvasId });
       const div = document.createElement('div');
       div.id = `card_sig_${idUnico}`;
       div.className = "border-2 border-slate-300 rounded-xl p-3 bg-slate-50 space-y-2 text-xs";
+      const papelAtual = dados?.papel || 'Condutor V1';
       div.innerHTML = `
         <div class="flex items-center justify-between border-b pb-1">
           <span class="font-extrabold text-green-900 uppercase"><i class="fa-solid fa-signature"></i> Assinatura do Envolvido</span>
@@ -1083,26 +1123,28 @@
         <div class="grid grid-cols-3 gap-2">
           <input type="text" class="sig-env-nome col-span-2 border rounded-lg p-1.5 bg-white" placeholder="Nome completo de quem assina" value="${esc(dados?.nome || '')}" />
           <select class="sig-env-papel border rounded-lg p-1.5 bg-white font-semibold">
-            <option ${dados?.papel === 'Condutor V1' ? 'selected' : ''}>Condutor V1</option>
-            <option ${dados?.papel === 'Condutor V2' ? 'selected' : ''}>Condutor V2</option>
-            <option ${dados?.papel === 'Condutor V3' ? 'selected' : ''}>Condutor V3</option>
-            <option ${dados?.papel === 'Testemunha' ? 'selected' : ''}>Testemunha</option>
-            <option ${dados?.papel === 'Vítima' ? 'selected' : ''}>Vítima</option>
+            <option value="Condutor V1" ${papelAtual === 'Condutor V1' ? 'selected' : ''}>Condutor V1</option>
+            <option value="Condutor V2" ${papelAtual === 'Condutor V2' ? 'selected' : ''}>Condutor V2</option>
+            <option value="Condutor V3" ${papelAtual === 'Condutor V3' ? 'selected' : ''}>Condutor V3</option>
+            <option value="Condutor V4" ${papelAtual === 'Condutor V4' ? 'selected' : ''}>Condutor V4</option>
+            <option value="Testemunha" ${papelAtual === 'Testemunha' ? 'selected' : ''}>Testemunha</option>
+            <option value="Vítima" ${papelAtual === 'Vítima' ? 'selected' : ''}>Vítima</option>
+            <option value="Proprietário / Outros" ${papelAtual === 'Proprietário / Outros' ? 'selected' : ''}>Proprietário / Outros</option>
           </select>
         </div>
         <div class="border-2 border-dashed border-slate-400 rounded-lg bg-white overflow-hidden">
           <canvas id="${canvasId}" width="440" height="120" class="sig-canvas w-full h-[110px]"></canvas>
         </div>`;
       document.getElementById('assinaturas_envolvidos_container').appendChild(div);
-      setTimeout(() => {
-        ativarCanvasAssinatura(canvasId);
-        if (dados?.dataUrl) {
-          const c = document.getElementById(canvasId);
-          const img = new Image();
-          img.onload = () => c.getContext('2d').drawImage(img, 0, 0);
-          img.src = dados.dataUrl;
-        }
-      }, 40);
+
+      const c = document.getElementById(canvasId);
+      if (c && dados?.dataUrl) {
+        c.dataset.savedUrl = dados.dataUrl;
+        const img = new Image();
+        img.onload = () => c.getContext('2d').drawImage(img, 0, 0);
+        img.src = dados.dataUrl;
+      }
+      ativarCanvasAssinatura(canvasId);
     }
 
     function removerAssinaturaEnvolvido(idUnico) {
@@ -1118,7 +1160,7 @@
         return {
           nome: card.querySelector('.sig-env-nome')?.value || '',
           papel: card.querySelector('.sig-env-papel')?.value || 'Envolvido',
-          dataUrl: c.toDataURL('image/png')
+          dataUrl: obterDataUrlAssinatura(item.canvasId)
         };
       }).filter(Boolean);
     }
@@ -1317,6 +1359,7 @@
       return `BST-${ano}-${String(maior + 1).padStart(4, '0')}`;
     }
 
+    // CORREÇÃO 3: Captura ampliada de vítimas (qualquer campo preenchido na linha de vítima é registrado na impressão)
     function coletarObjetoBoletimAtual() {
       garantirCanvasPronto();
       renderizarCroquiCompleto(true);
@@ -1351,32 +1394,31 @@
       });
 
       const listaVitimas = Array.from(document.querySelectorAll('#vitimas_container > div')).map(d => ({
-        nome: d.querySelector('.vit-nome')?.value || '',
-        cpf: d.querySelector('.vit-cpf')?.value || '',
-        idade: d.querySelector('.vit-idade')?.value || '',
+        nome: (d.querySelector('.vit-nome')?.value || '').trim(),
+        cpf: (d.querySelector('.vit-cpf')?.value || '').trim(),
+        idade: (d.querySelector('.vit-idade')?.value || '').trim(),
         ferimento: d.querySelector('.vit-ferimento')?.value || 'Leves',
         posicao: d.querySelector('.vit-posicao')?.value || 'Condutor V1',
-        hospital: d.querySelector('.vit-hospital')?.value || '',
-        endereco: d.querySelector('.vit-end')?.value || ''
-      })).filter(v => v.nome || v.cpf || v.hospital);
+        hospital: (d.querySelector('.vit-hospital')?.value || '').trim(),
+        endereco: (d.querySelector('.vit-end')?.value || '').trim()
+      })).filter(v => v.nome !== '' || v.cpf !== '' || v.idade !== '' || v.hospital !== '' || v.endereco !== '');
 
       const listaTestemunhas = Array.from(document.querySelectorAll('#testemunhas_container > div')).map(d => ({
-        nome: d.querySelector('.test-nome')?.value || '',
-        doc: d.querySelector('.test-doc')?.value || '',
-        endereco: d.querySelector('.test-end')?.value || ''
-      })).filter(t => t.nome || t.doc);
+        nome: (d.querySelector('.test-nome')?.value || '').trim(),
+        doc: (d.querySelector('.test-doc')?.value || '').trim(),
+        endereco: (d.querySelector('.test-end')?.value || '').trim()
+      })).filter(t => t.nome !== '' || t.doc !== '' || t.endereco !== '');
 
       const listaDeclaracoes = declaracoes.map(dec => {
         const card = document.getElementById(`card_decl_${dec.id}`);
-        const c = document.getElementById(dec.canvasId);
         if (!card) return null;
         return {
-          nome: card.querySelector('.decl-nome')?.value || '',
-          placa: card.querySelector('.decl-placa')?.value || '',
-          relato: document.getElementById(`decl_txt_${dec.id}`)?.value || '',
-          sigDataUrl: c ? c.toDataURL('image/png') : ''
+          nome: (card.querySelector('.decl-nome')?.value || '').trim(),
+          placa: (card.querySelector('.decl-placa')?.value || '').trim(),
+          relato: (document.getElementById(`decl_txt_${dec.id}`)?.value || '').trim(),
+          sigDataUrl: obterDataUrlAssinatura(dec.canvasId)
         };
-      }).filter(d => d && (d.nome || d.relato));
+      }).filter(d => d && (d.nome || d.placa || d.relato || d.sigDataUrl));
 
       const frenagem = {};
       ['dd', 'de', 'td', 'te'].forEach(p => {
@@ -1435,6 +1477,7 @@
         agente_nome: document.getElementById('agente_nome').value,
         agente_matricula: document.getElementById('agente_matricula').value,
         agente_fone: document.getElementById('agente_fone').value,
+        agente_sig_data_url: obterDataUrlAssinatura('sig_agente_canvas'),
         croqui_gabarito: croquiGabarito,
         croqui_objetos: croquiObjetos,
         croqui_tracos: croquiTracos,
@@ -1493,7 +1536,20 @@
       document.getElementById('prop_nome').value = '';
       document.getElementById('prop_avarias').value = '';
       document.getElementById('prop_conhecimento').value = '';
-      document.querySelectorAll('.chk-classificacao, .chk-infracao, .chk-cond-condutor, .circ-placa').forEach(c => c.checked = false);
+      document.getElementById('num_vitimas').value = '0';
+      document.getElementById('num_feridos').value = '0';
+      document.getElementById('num_mortos').value = '0';
+      document.getElementById('vel_dist_embate').value = '';
+      document.getElementById('vel_dist_visib').value = '';
+      document.getElementById('vel_max_via').value = '';
+      document.getElementById('prov_recebedor').value = '';
+      document.getElementById('prov_equipe_nome').value = '';
+      document.getElementById('prov_equipe_mat').value = '';
+      ['dd', 'de', 'td', 'te'].forEach(p => [1,2,3,4].forEach(v => {
+        const el = document.getElementById(`fren_${p}_v${v}`);
+        if (el) el.value = '';
+      }));
+      document.querySelectorAll('.chk-classificacao, .chk-infracao, .chk-cond-condutor, .circ-placa, .prov-reboque').forEach(c => c.checked = false);
       fotosVeiculos = { 1: [], 2: [], 3: [], 4: [] };
       veiculos = [{ id: 1 }, { id: 2 }];
       renderizarVeiculos();
@@ -1503,11 +1559,13 @@
       adicionarAssinaturaEnvolvido({ papel: 'Condutor V1' });
       adicionarAssinaturaEnvolvido({ papel: 'Condutor V2' });
       declaracoes = []; document.getElementById('declaracoes_container').innerHTML = ''; adicionarDeclaracao();
+      limparCanvasAssinatura('sig_agente_canvas');
       croquiObjetos = []; croquiTracos = []; objSelecionado = null;
       renderizarCroquiCompleto();
       mudarAba(1);
     }
 
+    // CORREÇÃO 1 e 3: Restauração completa de Vítimas, Testemunhas, Declarações, Frenagem, Circunstâncias e Assinaturas ao carregar do banco
     function carregarBoletimDoBanco(numeroBST, irAba1 = true) {
       const b = obterBoletinsBanco().find(x => x.bst_numero === numeroBST);
       if (!b) return;
@@ -1529,13 +1587,40 @@
       document.getElementById('num_feridos').value = b.num_feridos || 0;
       document.getElementById('num_mortos').value = b.num_mortos || 0;
 
+      if (b.circ_local) document.getElementById('circ_local').value = b.circ_local;
+      if (b.circ_sinalizacao) document.getElementById('circ_sinalizacao').value = b.circ_sinalizacao;
+      if (b.circ_semaforo) document.getElementById('circ_semaforo').value = b.circ_semaforo;
+      if (b.circ_periodo) document.getElementById('circ_periodo').value = b.circ_periodo;
+      if (b.circ_clima) document.getElementById('circ_clima').value = b.circ_clima;
+      if (b.circ_pista) document.getElementById('circ_pista').value = b.circ_pista;
+      if (b.circ_pavimentacao) document.getElementById('circ_pavimentacao').value = b.circ_pavimentacao;
+      if (b.circ_sentido) document.getElementById('circ_sentido').value = b.circ_sentido;
+      if (b.circ_area) document.getElementById('circ_area').value = b.circ_area;
+      if (b.circ_divisao) document.getElementById('circ_divisao').value = b.circ_divisao;
+      if (b.circ_cond_gerais) document.getElementById('circ_cond_gerais').value = b.circ_cond_gerais;
+
       document.querySelectorAll('.chk-classificacao').forEach(c => c.checked = (b.classificacoes || []).includes(c.value));
       document.querySelectorAll('.chk-infracao').forEach(c => c.checked = (b.infracoes || []).some(i => i.inf === c.dataset.inf && i.v === c.dataset.v));
       document.querySelectorAll('.chk-cond-condutor').forEach(c => c.checked = (b.condicoes_condutores || []).some(k => k.cond === c.dataset.cond && k.v === c.dataset.v));
       document.querySelectorAll('.circ-placa').forEach(c => c.checked = (b.circ_placas || []).includes(c.value));
+      document.querySelectorAll('.prov-comunicado').forEach(c => c.checked = (b.prov_comunicado || []).includes(c.value));
+      document.querySelectorAll('.prov-reboque').forEach(c => c.checked = (b.prov_reboque || []).includes(c.value));
+
+      ['dd', 'de', 'td', 'te'].forEach(p => {
+        [1, 2, 3, 4].forEach(v => {
+          const el = document.getElementById(`fren_${p}_v${v}`);
+          if (el) el.value = b.frenagem?.[p]?.[`v${v}`] || '';
+        });
+      });
+      document.getElementById('vel_dist_embate').value = b.vel_dist_embate || '';
+      document.getElementById('vel_dist_visib').value = b.vel_dist_visib || '';
+      document.getElementById('vel_max_via').value = b.vel_max_via || '';
+      document.getElementById('prov_recebedor').value = b.prov_recebedor || '';
+      document.getElementById('prov_equipe_nome').value = b.prov_equipe_nome || '';
+      document.getElementById('prov_equipe_mat').value = b.prov_equipe_mat || '';
 
       fotosVeiculos = { 1: [], 2: [], 3: [], 4: [] };
-      veiculos = (b.veiculos || [{}, {}]).map((_, i) => ({ id: i + 1 }));
+      veiculos = (b.veiculos && b.veiculos.length ? b.veiculos : [{}, {}]).map((_, i) => ({ id: i + 1 }));
       renderizarVeiculos();
       (b.veiculos || []).forEach((v, i) => {
         const n = i + 1;
@@ -1546,6 +1631,11 @@
         document.getElementById(`v${n}_cor_ano`).value = v.cor_ano || '';
         document.getElementById(`v${n}_municipio`).value = v.municipio || 'Casa Nova - BA';
         document.getElementById(`v${n}_renavam`).value = v.renavam || '';
+        if (v.tracao) document.getElementById(`v${n}_tracao`).value = v.tracao;
+        if (v.especie) document.getElementById(`v${n}_especie`).value = v.especie;
+        if (v.tipo) document.getElementById(`v${n}_tipo`).value = v.tipo;
+        if (v.categoria_veic) document.getElementById(`v${n}_categoria_veic`).value = v.categoria_veic;
+        document.getElementById(`v${n}_art279`).checked = Boolean(v.art279);
         document.getElementById(`v${n}_proprietario`).value = v.proprietario || '';
         document.getElementById(`v${n}_cpf_proprietario`).value = v.cpf_proprietario || '';
         document.getElementById(`v${n}_condutor`).value = v.condutor || '';
@@ -1566,9 +1656,54 @@
       document.getElementById('agente_matricula').value = b.agente_matricula || '';
       document.getElementById('agente_fone').value = b.agente_fone || '';
 
+      // Restaura Vítimas
+      vitimas = [];
+      document.getElementById('vitimas_container').innerHTML = '';
+      if (Array.isArray(b.vitimas) && b.vitimas.length > 0) {
+        b.vitimas.forEach(vt => adicionarVitima(vt));
+      } else {
+        adicionarVitima();
+      }
+
+      // Restaura Testemunhas
+      testemunhas = [];
+      document.getElementById('testemunhas_container').innerHTML = '';
+      if (Array.isArray(b.testemunhas) && b.testemunhas.length > 0) {
+        b.testemunhas.forEach(t => adicionarTestemunha(t));
+      } else {
+        adicionarTestemunha();
+      }
+
+      // Restaura Assinaturas dos Envolvidos
       assinaturasEnvolvidos = [];
       document.getElementById('assinaturas_envolvidos_container').innerHTML = '';
-      (b.assinaturas_envolvidos || []).forEach(s => adicionarAssinaturaEnvolvido(s));
+      if (Array.isArray(b.assinaturas_envolvidos) && b.assinaturas_envolvidos.length > 0) {
+        b.assinaturas_envolvidos.forEach(s => adicionarAssinaturaEnvolvido(s));
+      } else {
+        adicionarAssinaturaEnvolvido({ papel: 'Condutor V1' });
+        adicionarAssinaturaEnvolvido({ papel: 'Condutor V2' });
+      }
+
+      // Restaura Declarações
+      declaracoes = [];
+      document.getElementById('declaracoes_container').innerHTML = '';
+      if (Array.isArray(b.declaracoes) && b.declaracoes.length > 0) {
+        b.declaracoes.forEach(d => adicionarDeclaracao(d));
+      } else {
+        adicionarDeclaracao();
+      }
+
+      // Restaura Assinatura do Agente
+      limparCanvasAssinatura('sig_agente_canvas');
+      if (b.agente_sig_data_url) {
+        const cAg = document.getElementById('sig_agente_canvas');
+        if (cAg) {
+          cAg.dataset.savedUrl = b.agente_sig_data_url;
+          const imgAg = new Image();
+          imgAg.onload = () => cAg.getContext('2d').drawImage(imgAg, 0, 0);
+          imgAg.src = b.agente_sig_data_url;
+        }
+      }
 
       croquiGabarito = b.croqui_gabarito || 'ambos';
       croquiObjetos = b.croqui_objetos || [];
@@ -1738,38 +1873,57 @@
       inp.value = arr.join(', ');
     }
 
-    function adicionarVitima() {
-      const idx = vitimas.length + 1; vitimas.push({ id: idx });
+    function adicionarVitima(dados = null) {
+      const idx = vitimas.length + 1;
+      vitimas.push({ id: idx });
+      const ferAtual = dados?.ferimento || 'Leves';
+      const posAtual = dados?.posicao || 'Condutor V1';
       const div = document.createElement('div');
-      div.className = "border rounded-xl p-3 bg-red-50/30 grid grid-cols-1 md:grid-cols-6 gap-3 text-xs";
+      div.className = "vitima-row border rounded-xl p-3 bg-red-50/30 grid grid-cols-1 md:grid-cols-6 gap-3 text-xs";
       div.innerHTML = `
-        <div class="md:col-span-2"><label class="font-bold block mb-1">${idx}) Nome da Vítima</label><input type="text" class="vit-nome w-full border rounded-lg p-2 bg-white" /></div>
+        <div class="md:col-span-2"><label class="font-bold block mb-1">${idx}) Nome da Vítima</label><input type="text" value="${esc(dados?.nome || '')}" class="vit-nome w-full border rounded-lg p-2 bg-white" /></div>
         <div>
           <label class="font-bold block mb-1">CPF da Vítima</label>
-          <input type="text" maxlength="14" data-aceita-cnpj="false" data-rotulo="CPF Vítima #${idx}" oninput="aplicarMascaraEValidarCPF(this, false)" class="vit-cpf input-cpf-validado w-full border rounded-lg p-2 bg-white font-mono" />
+          <input type="text" maxlength="14" value="${esc(dados?.cpf || '')}" data-aceita-cnpj="false" data-rotulo="CPF Vítima #${idx}" oninput="aplicarMascaraEValidarCPF(this, false)" class="vit-cpf input-cpf-validado w-full border rounded-lg p-2 bg-white font-mono" />
           <span class="msg-validacao-cpf"></span>
         </div>
-        <div><label class="font-bold block mb-1">Idade / Sexo</label><input type="text" class="vit-idade w-full border rounded-lg p-2 bg-white" /></div>
-        <div><label class="font-bold block mb-1">Ferimentos</label><select class="vit-ferimento w-full border rounded-lg p-2 bg-white"><option>Leves</option><option>Grave</option><option>Gravíssimo</option><option>Letais (NIC)</option></select></div>
-        <div><label class="font-bold block mb-1">Posição</label><select class="vit-posicao w-full border rounded-lg p-2 bg-white"><option>Condutor V1</option><option>Condutor V2</option><option>Passageiro V1</option><option>Passageiro V2</option><option>Pedestre</option></select></div>
-        <div class="md:col-span-3"><label class="font-bold block mb-1">Endereço da Vítima</label><input type="text" class="vit-end w-full border rounded-lg p-2 bg-white" /></div>
-        <div class="md:col-span-3"><label class="font-bold block mb-1">Socorrido por / Unidade Hospitalar</label><input type="text" class="vit-hospital w-full border rounded-lg p-2 bg-white" /></div>`;
+        <div><label class="font-bold block mb-1">Idade / Sexo</label><input type="text" value="${esc(dados?.idade || '')}" class="vit-idade w-full border rounded-lg p-2 bg-white" /></div>
+        <div><label class="font-bold block mb-1">Ferimentos</label><select class="vit-ferimento w-full border rounded-lg p-2 bg-white">
+          <option value="Leves" ${ferAtual === 'Leves' ? 'selected' : ''}>Leves</option>
+          <option value="Grave" ${ferAtual === 'Grave' ? 'selected' : ''}>Grave</option>
+          <option value="Gravíssimo" ${ferAtual === 'Gravíssimo' ? 'selected' : ''}>Gravíssimo</option>
+          <option value="Letais (NIC)" ${ferAtual === 'Letais (NIC)' ? 'selected' : ''}>Letais (NIC)</option>
+        </select></div>
+        <div><label class="font-bold block mb-1">Posição</label><select class="vit-posicao w-full border rounded-lg p-2 bg-white">
+          <option value="Condutor V1" ${posAtual === 'Condutor V1' ? 'selected' : ''}>Condutor V1</option>
+          <option value="Condutor V2" ${posAtual === 'Condutor V2' ? 'selected' : ''}>Condutor V2</option>
+          <option value="Condutor V3" ${posAtual === 'Condutor V3' ? 'selected' : ''}>Condutor V3</option>
+          <option value="Condutor V4" ${posAtual === 'Condutor V4' ? 'selected' : ''}>Condutor V4</option>
+          <option value="Passageiro V1" ${posAtual === 'Passageiro V1' ? 'selected' : ''}>Passageiro V1</option>
+          <option value="Passageiro V2" ${posAtual === 'Passageiro V2' ? 'selected' : ''}>Passageiro V2</option>
+          <option value="Passageiro V3" ${posAtual === 'Passageiro V3' ? 'selected' : ''}>Passageiro V3</option>
+          <option value="Passageiro V4" ${posAtual === 'Passageiro V4' ? 'selected' : ''}>Passageiro V4</option>
+          <option value="Pedestre" ${posAtual === 'Pedestre' ? 'selected' : ''}>Pedestre</option>
+        </select></div>
+        <div class="md:col-span-3"><label class="font-bold block mb-1">Endereço da Vítima</label><input type="text" value="${esc(dados?.endereco || '')}" class="vit-end w-full border rounded-lg p-2 bg-white" /></div>
+        <div class="md:col-span-3"><label class="font-bold block mb-1">Socorrido por / Unidade Hospitalar</label><input type="text" value="${esc(dados?.hospital || '')}" class="vit-hospital w-full border rounded-lg p-2 bg-white" /></div>`;
       document.getElementById('vitimas_container').appendChild(div);
     }
 
-    function adicionarTestemunha() {
-      const idx = testemunhas.length + 1; testemunhas.push({ id: idx });
+    function adicionarTestemunha(dados = null) {
+      const idx = testemunhas.length + 1;
+      testemunhas.push({ id: idx });
       const div = document.createElement('div');
       div.className = "border rounded-xl p-3 bg-slate-50 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs";
       div.innerHTML = `
-        <div><label class="font-bold block mb-1">Nome da Testemunha ${idx}</label><input type="text" class="test-nome w-full border rounded-lg p-2 bg-white" /></div>
-        <div><label class="font-bold block mb-1">RG / Telefone</label><input type="text" class="test-doc w-full border rounded-lg p-2 bg-white" /></div>
-        <div><label class="font-bold block mb-1">Endereço</label><input type="text" class="test-end w-full border rounded-lg p-2 bg-white" /></div>`;
+        <div><label class="font-bold block mb-1">Nome da Testemunha ${idx}</label><input type="text" value="${esc(dados?.nome || '')}" class="test-nome w-full border rounded-lg p-2 bg-white" /></div>
+        <div><label class="font-bold block mb-1">RG / Telefone</label><input type="text" value="${esc(dados?.doc || '')}" class="test-doc w-full border rounded-lg p-2 bg-white" /></div>
+        <div><label class="font-bold block mb-1">Endereço</label><input type="text" value="${esc(dados?.endereco || '')}" class="test-end w-full border rounded-lg p-2 bg-white" /></div>`;
       document.getElementById('testemunhas_container').appendChild(div);
     }
 
-    function adicionarDeclaracao() {
-      const idU = Date.now() + Math.floor(Math.random() * 1000);
+    function adicionarDeclaracao(dados = null) {
+      const idU = Date.now() + Math.floor(Math.random() * 10000);
       const idTxt = `decl_txt_${idU}`, idBtn = `decl_btn_${idU}`, idSt = `decl_st_${idU}`, idSig = `decl_sig_${idU}`;
       declaracoes.push({ id: idU, canvasId: idSig });
       const div = document.createElement('div');
@@ -1782,19 +1936,27 @@
         </div>
         <div id="${idSt}" class="hidden bg-red-50 text-red-800 p-1.5 rounded font-semibold">Gravando voz...</div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <input type="text" placeholder="Nome Completo do Condutor" class="decl-nome md:col-span-2 border rounded-lg p-2 bg-white" />
-          <input type="text" placeholder="Placa do Veículo" class="decl-placa border rounded-lg p-2 bg-white" />
-          <textarea id="${idTxt}" rows="2" placeholder="Relato do condutor..." class="decl-relato md:col-span-3 border rounded-lg p-2 bg-white"></textarea>
+          <input type="text" placeholder="Nome Completo do Condutor" value="${esc(dados?.nome || '')}" class="decl-nome md:col-span-2 border rounded-lg p-2 bg-white" />
+          <input type="text" placeholder="Placa do Veículo" value="${esc(dados?.placa || '')}" class="decl-placa border rounded-lg p-2 bg-white" />
+          <textarea id="${idTxt}" rows="2" placeholder="Relato do condutor..." class="decl-relato md:col-span-3 border rounded-lg p-2 bg-white">${esc(dados?.relato || '')}</textarea>
           <div class="md:col-span-3">
             <div class="flex justify-between mb-1"><span class="font-bold">Assinatura do Condutor (Com o dedo na tela):</span><button type="button" onclick="limparCanvasAssinatura('${idSig}')" class="bg-slate-200 px-2 py-0.5 rounded font-bold">Limpar</button></div>
             <div class="border-2 border-dashed border-slate-400 rounded-lg bg-white overflow-hidden"><canvas id="${idSig}" width="550" height="110" class="sig-canvas w-full h-[100px]"></canvas></div>
           </div>
         </div>`;
       document.getElementById('declaracoes_container').appendChild(div);
-      setTimeout(() => ativarCanvasAssinatura(idSig), 40);
+
+      const c = document.getElementById(idSig);
+      if (c && dados?.sigDataUrl) {
+        c.dataset.savedUrl = dados.sigDataUrl;
+        const img = new Image();
+        img.onload = () => c.getContext('2d').drawImage(img, 0, 0);
+        img.src = dados.sigDataUrl;
+      }
+      ativarCanvasAssinatura(idSig);
     }
 
-    // ==================== VOZ, EXEMPLO E IMPRESSÃO COMPLETA (TODOS OS DADOS + CROQUI) ====================
+    // ==================== VOZ, EXEMPLO E IMPRESSÃO COMPLETA ====================
     let recVoz = null;
     function alternarReconhecimentoVoz(txtId, btnId, stId) {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1842,6 +2004,19 @@
       aplicarMascaraEValidarCNH(document.getElementById('v1_cnh'));
       document.getElementById('v1_cat_cnh').value = "AB / BA";
       document.getElementById('v1_avarias_texto').value = "Frente, Para-choque dianteiro";
+
+      vitimas = [];
+      document.getElementById('vitimas_container').innerHTML = '';
+      adicionarVitima({
+        nome: "José da Silva Santos",
+        cpf: "111.444.777-35",
+        idade: "29a / M",
+        ferimento: "Leves",
+        posicao: "Condutor V2",
+        endereco: "Rua Principal, Centro, Casa Nova - BA",
+        hospital: "SAMU 192 / Hospital Municipal de Casa Nova"
+      });
+
       croquiObjetos = [
         { id: 1, tipo: 'auto_antes', rotulo: 'V1', x: 220, y: 225, angulo: 0 },
         { id: 2, tipo: 'motocicleta', rotulo: 'V2', x: 310, y: 145, angulo: 90 },
@@ -1851,7 +2026,7 @@
       gerarRelatoAutomatico();
     }
 
-    // 6. IMPRESSÃO COMPLETA DE TODOS OS CAMPOS DO E-BST (SEÇÕES I A XIII + CROQUI GARANTIDO)
+    // 6. IMPRESSÃO COMPLETA DE TODOS OS CAMPOS DO E-BST (SEÇÕES I A XIII + TODAS AS ASSINATURAS E VÍTIMAS GARANTIDAS)
     function gerarImpressao() {
       const b = coletarObjetoBoletimAtual();
       const logo = document.getElementById('img_logo_topo').src;
@@ -1859,7 +2034,7 @@
       const veicsHtml = (b.veiculos || []).map((v, i) => {
         const n = i + 1;
         const fHtml = (v.fotos || []).map((f, idx) => `<div style="border:1px solid #94a3b8;padding:2px;text-align:center;"><img src="${f.dataUrl}" style="width:115px;height:78px;object-fit:cover;display:block;"/><span style="font-size:8px;font-weight:bold;">V-${n} Foto #${idx+1}</span></div>`).join('');
-        return `<div style="border:1px solid #000;padding:5px;margin-bottom:5px;font-size:10px;">
+        return `<div class="evitar-quebra" style="border:1px solid #000;padding:5px;margin-bottom:5px;font-size:10px;">
           <div style="background:#f1f5f9;font-weight:800;padding:2px 4px;margin-bottom:3px;border-bottom:1px solid #cbd5e1;">
             VEÍCULO V-${n} — ${esc(v.modelo || '-')} | Placa: ${esc(v.placa || '-')} | Cor/Ano: ${esc(v.cor_ano || '-')} | ${v.art279 ? 'RECOLHIDO ART. 279-A CTB' : 'Liberado/Local'}
           </div>
@@ -1872,34 +2047,49 @@
       }).join('');
 
       const vitimasHtml = (b.vitimas || []).length
-        ? `<table class="print-table"><thead><tr><th>#</th><th>Nome da Vítima</th><th>CPF</th><th>Idade/Sexo</th><th>Ferimentos</th><th>Posição</th><th>Unid. Hospitalar / Endereço</th></tr></thead><tbody>` +
-          b.vitimas.map((vt, idx) => `<tr><td>${idx+1}</td><td>${esc(vt.nome)}</td><td>${esc(vt.cpf)}</td><td>${esc(vt.idade)}</td><td><strong>${esc(vt.ferimento)}</strong></td><td>${esc(vt.posicao)}</td><td>${esc(vt.hospital)} (${esc(vt.endereco)})</td></tr>`).join('') +
+        ? `<table class="print-table"><thead><tr><th>#</th><th>Nome da Vítima</th><th>CPF</th><th>Idade/Sexo</th><th>Ferimentos</th><th>Posição</th><th>Endereço</th><th>Socorrido por / Unidade Hospitalar</th></tr></thead><tbody>` +
+          b.vitimas.map((vt, idx) => `<tr><td>${idx+1}</td><td><strong>${esc(vt.nome || '-')}</strong></td><td>${esc(vt.cpf || '-')}</td><td>${esc(vt.idade || '-')}</td><td><strong>${esc(vt.ferimento || '-')}</strong></td><td>${esc(vt.posicao || '-')}</td><td>${esc(vt.endereco || '-')}</td><td>${esc(vt.hospital || '-')}</td></tr>`).join('') +
           `</tbody></table>`
-        : `<p style="margin:2px 0;">Sem vítimas cadastradas.</p>`;
+        : `<p style="margin:2px 0;font-size:10px;">Sem vítimas cadastradas.</p>`;
 
       const testHtml = (b.testemunhas || []).length
-        ? `<table class="print-table"><thead><tr><th>Nome da Testemunha</th><th>RG / Telefone</th><th>Endereço</th></tr></thead><tbody>` +
-          b.testemunhas.map(t => `<tr><td>${esc(t.nome)}</td><td>${esc(t.doc)}</td><td>${esc(t.endereco)}</td></tr>`).join('') +
+        ? `<table class="print-table"><thead><tr><th>#</th><th>Nome da Testemunha</th><th>RG / Telefone</th><th>Endereço</th></tr></thead><tbody>` +
+          b.testemunhas.map((t, idx) => `<tr><td>${idx+1}</td><td>${esc(t.nome || '-')}</td><td>${esc(t.doc || '-')}</td><td>${esc(t.endereco || '-')}</td></tr>`).join('') +
           `</tbody></table>`
-        : `<p style="margin:2px 0;">Sem testemunhas cadastradas.</p>`;
+        : `<p style="margin:2px 0;font-size:10px;">Sem testemunhas cadastradas.</p>`;
 
-      const sigsHtml = (b.assinaturas_envolvidos || []).map(s => `
-        <div style="border:1px solid #000;padding:4px;text-align:center;">
-          <img src="${s.dataUrl}" style="height:55px;max-width:100%;object-fit:contain;margin:0 auto;display:block;" />
-          <div style="border-top:1px solid #000;font-size:9.5px;margin-top:2px;"><strong>${esc(s.nome || 'Envolvido')}</strong> (${esc(s.papel)})</div>
-        </div>`).join('');
+      const sigsHtml = (b.assinaturas_envolvidos || []).length
+        ? (b.assinaturas_envolvidos || []).map(s => `
+          <div class="evitar-quebra" style="border:1px solid #000;padding:6px;text-align:center;background:#fff;">
+            ${s.dataUrl
+              ? `<img src="${s.dataUrl}" style="height:60px;max-width:100%;object-fit:contain;margin:0 auto;display:block;" />`
+              : `<div style="height:60px;"></div>`
+            }
+            <div style="border-top:1px solid #000;font-size:9.5px;margin-top:4px;padding-top:2px;">
+              <strong>${esc(s.nome || 'Assinatura do Envolvido')}</strong> — <span>${esc(s.papel)}</span>
+            </div>
+          </div>`).join('')
+        : `<div style="border:1px solid #000;padding:8px;text-align:center;grid-column:span 2;">Sem assinaturas coletadas.</div>`;
 
       const declHtml = (b.declaracoes || []).length
         ? `<div class="print-sec-title">PÁGINAS 7 e 8 - DECLARAÇÕES DOS CONDUTORES</div>` +
           b.declaracoes.map((d, i) => `
-            <div style="border:1px solid #000;padding:5px;margin-bottom:5px;font-size:10px;">
-              <strong>Declaração #${i+1} - Condutor:</strong> ${esc(d.nome)} | <strong>Placa:</strong> ${esc(d.placa)}<br/>
-              <strong>Relato:</strong> ${esc(d.relato)}
-              ${d.sigDataUrl ? `<div style="text-align:center;margin-top:4px;"><img src="${d.sigDataUrl}" style="height:45px;margin:0 auto;display:block;"/><span style="font-size:8.5px;">Assinatura do Condutor Declarante</span></div>` : ''}
+            <div class="evitar-quebra" style="border:1px solid #000;padding:5px;margin-bottom:5px;font-size:10px;">
+              <strong>Declaração #${i+1} - Condutor:</strong> ${esc(d.nome || '-')} | <strong>Placa:</strong> ${esc(d.placa || '-')}<br/>
+              <strong>Relato:</strong> ${esc(d.relato || '-')}
+              <div style="text-align:center;margin-top:6px;">
+                ${d.sigDataUrl ? `<img src="${d.sigDataUrl}" style="height:50px;max-width:280px;object-fit:contain;margin:0 auto;display:block;"/>` : `<div style="height:35px;"></div>`}
+                <div style="border-top:1px solid #000;width:260px;margin:2px auto 0 auto;font-size:8.5px;padding-top:2px;">Assinatura do Condutor Declarante (${esc(d.nome || 'Condutor')})</div>
+              </div>
             </div>`).join('')
         : '';
 
-      document.getElementById('print_area').innerHTML = `
+      const frenagemResumo = [1, 2, 3, 4].map(v =>
+        `<strong>V${v}:</strong> DD:${esc(b.frenagem?.dd?.[`v${v}`]||'-')} | DE:${esc(b.frenagem?.de?.[`v${v}`]||'-')} | TD:${esc(b.frenagem?.td?.[`v${v}`]||'-')} | TE:${esc(b.frenagem?.te?.[`v${v}`]||'-')}`
+      ).join(' &nbsp;&bull;&nbsp; ');
+
+      const printArea = document.getElementById('print_area');
+      printArea.innerHTML = `
         <div style="border:2px solid #000;padding:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:6px;">
             <div style="display:flex;align-items:center;gap:10px;">
@@ -1958,15 +2148,18 @@
             </tr>
           </table>
 
-          <div class="print-sec-title">VIII, IX e X - CONDIÇÕES DOS CONDUTORES, VELOCIDADE/FRENAGEM E PROVIDÊNCIAS</div>
+          <div class="print-sec-title">VIII, IX e X - CONDIÇÕES DOS CONDUTORES, VELOCIDADE/FRENAGEM (V1 a V4) E PROVIDÊNCIAS</div>
           <table class="print-table">
             <tr>
               <td colspan="3"><strong>VIII - Condições dos Condutores:</strong> ${esc((b.condicoes_condutores || []).map(c => `${c.cond} (${c.v})`).join('; ') || 'Normal')}</td>
             </tr>
             <tr>
-              <td><strong>IX - Frenagem (m):</strong> V1(DD:${esc(b.frenagem?.dd?.v1||'-')}, DE:${esc(b.frenagem?.de?.v1||'-')}, TD:${esc(b.frenagem?.td?.v1||'-')}, TE:${esc(b.frenagem?.te?.v1||'-')}) | V2(DD:${esc(b.frenagem?.dd?.v2||'-')}, DE:${esc(b.frenagem?.de?.v2||'-')})</td>
-              <td><strong>Pós-Embate:</strong> ${esc(b.vel_dist_embate || '-')} | <strong>Visibilidade:</strong> ${esc(b.vel_dist_visib || '-')}</td>
-              <td><strong>Vel. Máx. Via:</strong> ${esc(b.vel_max_via || '-')}</td>
+              <td colspan="3"><strong>IX - Marcas de Frenagem (m):</strong> ${frenagemResumo}</td>
+            </tr>
+            <tr>
+              <td><strong>Distância Após Embate (m):</strong> ${esc(b.vel_dist_embate || '-')}</td>
+              <td><strong>Distância Visibilidade Percepção:</strong> ${esc(b.vel_dist_visib || '-')}</td>
+              <td><strong>Velocidade Máxima Permitida:</strong> ${esc(b.vel_max_via || '-')}</td>
             </tr>
             <tr>
               <td><strong>X - Comunicado a:</strong> ${esc((b.prov_comunicado || []).join(', ') || '-')}</td>
@@ -1975,42 +2168,47 @@
             </tr>
           </table>
 
-          <div class="print-sec-title">XI e VII - VÍTIMAS E TESTEMUNHAS</div>
+          <div class="print-sec-title">XI - REGISTRO DE VÍTIMAS</div>
           ${vitimasHtml}
+
+          <div class="print-sec-title">VII - TESTEMUNHAS</div>
           ${testHtml}
 
           <div class="print-sec-title">XII - DESCRIÇÃO DA DINÂMICA DO SINISTRO E ASSINATURA DOS ENVOLVIDOS</div>
-          <p style="border:1px solid #000;padding:5px;min-height:38px;margin:0 0 5px 0;font-size:10px;">${esc(b.desc_dinamica)}</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:5px;">${sigsHtml}</div>
+          <p style="border:1px solid #000;padding:5px;min-height:38px;margin:0 0 6px 0;font-size:10px;white-space:pre-wrap;">${esc(b.desc_dinamica || 'Sem relato registrado.')}</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">${sigsHtml}</div>
 
           ${declHtml}
 
-          <div class="print-sec-title">PÁGINA 5 - CROQUI DO SINISTRO</div>
-          <div style="border:1px solid #000;padding:4px;text-align:center;background:#fff;">
-            <img id="print_croqui_img" src="${b.croqui_data_url}" style="width:100%;max-height:230px;object-fit:contain;display:block;margin:0 auto;" />
+          <div class="evitar-quebra">
+            <div class="print-sec-title">PÁGINA 5 - CROQUI DO SINISTRO</div>
+            <div style="border:1px solid #000;padding:4px;text-align:center;background:#fff;">
+              <img id="print_croqui_img" src="${b.croqui_data_url}" style="width:100%;max-height:230px;object-fit:contain;display:block;margin:0 auto;" />
+            </div>
           </div>
 
-          <div style="margin-top:8px;padding-top:6px;border-top:2px solid #000;display:flex;justify-content:space-between;font-size:10.5px;">
-            <span><strong>XIII - Agente de Trânsito (DMTT Casa Nova-BA):</strong> ${esc(b.agente_nome)}</span>
-            <span><strong>Matrícula:</strong> ${esc(b.agente_matricula)} | <strong>Fone:</strong> ${esc(b.agente_fone)}</span>
-            <span><strong>Assinatura:</strong> _______________________________</span>
+          <div class="evitar-quebra" style="margin-top:8px;padding-top:6px;border-top:2px solid #000;display:flex;justify-content:space-between;align-items:flex-end;font-size:10.5px;">
+            <div>
+              <strong>XIII - Agente de Trânsito (DMTT Casa Nova-BA):</strong> ${esc(b.agente_nome || '-')}<br/>
+              <strong>Matrícula Funcional:</strong> ${esc(b.agente_matricula || '-')} | <strong>Telefone:</strong> ${esc(b.agente_fone || '-')}
+            </div>
+            <div style="text-align:center;min-width:240px;">
+              ${b.agente_sig_data_url ? `<img src="${b.agente_sig_data_url}" style="height:48px;max-width:220px;object-fit:contain;margin:0 auto;display:block;" />` : `<div style="height:30px;"></div>`}
+              <div style="border-top:1px solid #000;padding-top:2px;font-size:9.5px;">
+                <strong>Assinatura do Agente (${esc(b.agente_nome || 'DMTT')})</strong>
+              </div>
+            </div>
           </div>
         </div>`;
 
-      const imgP = document.getElementById('print_croqui_img');
-      let impresso = false;
-      const acionarPrint = () => {
-        if (impresso) return;
-        impresso = true;
+      // Aguarda todas as imagens (Assinaturas, Fotos e Croqui) carregarem antes de chamar o window.print()
+      const imgs = Array.from(printArea.querySelectorAll('img'));
+      Promise.all(imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(res => { img.onload = res; img.onerror = res; });
+      })).then(() => {
         setTimeout(() => window.print(), 150);
-      };
-      if (imgP && !imgP.complete) {
-        imgP.onload = acionarPrint;
-        imgP.onerror = acionarPrint;
-        setTimeout(acionarPrint, 450);
-      } else {
-        acionarPrint();
-      }
+      });
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -2026,6 +2224,7 @@
       adicionarAssinaturaEnvolvido({ papel: 'Condutor V1' });
       adicionarAssinaturaEnvolvido({ papel: 'Condutor V2' });
       adicionarDeclaracao();
+      ativarCanvasAssinatura('sig_agente_canvas');
       inicializarCanvasCroqui();
     });
   </script>
